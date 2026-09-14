@@ -25,6 +25,9 @@ export type Place = {
   category: "city" | "park" | "sea" | "shrine";
   price: number;
   minutes: number;
+  /** Local (JST) visiting window. The whole visit must fit before closeHour. */
+  openHour: number;
+  closeHour: number;
   diary: string;
   image?: string;
 };
@@ -37,6 +40,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 30,
+    openHour: 7,
+    closeHour: 20,
     diary: "リュックを背負ったら、なんだか少し勇気が出たよ。いってきます！",
   },
   {
@@ -47,6 +52,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 50,
+    openHour: 7,
+    closeHour: 20,
     diary: "水辺のベンチで、ひと休み。行き交う人を眺めるのも、旅の楽しみだね。",
   },
   {
@@ -57,6 +64,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 70,
+    openHour: 7,
+    closeHour: 20,
     diary:
       "川面がきらきらしていたよ。屋台から、おいしそうな匂い。おなかが鳴っちゃった。",
   },
@@ -68,6 +77,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 60,
+    openHour: 7,
+    closeHour: 20,
     diary:
       "にぎやかな道を、てくてく。小さな路地を見つけると、つい曲がりたくなるんだ。",
   },
@@ -79,6 +90,8 @@ export const places: Place[] = [
     category: "park",
     price: 0,
     minutes: 90,
+    openHour: 7,
+    closeHour: 19,
     diary:
       "池のまわりを一周したよ。水鳥を数えていたら、いつのまにか時間がたっていた。",
   },
@@ -90,6 +103,8 @@ export const places: Place[] = [
     category: "park",
     price: 0,
     minutes: 75,
+    openHour: 7,
+    closeHour: 19,
     diary:
       "石垣の上から、福岡の街が見えたよ。ずっと昔にも、ここを旅した誰かがいたのかな。",
   },
@@ -101,6 +116,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 70,
+    openHour: 7,
+    closeHour: 20,
     diary:
       "商店街を歩いていたら、すっかりこの街の気分。小さな寄り道がいちばん好きかも。",
   },
@@ -112,6 +129,8 @@ export const places: Place[] = [
     category: "sea",
     price: 0,
     minutes: 100,
+    openHour: 7,
+    closeHour: 19,
     diary:
       "はじめて見る、福岡の海！靴に砂が入ったけど、なんだかそれもうれしいな。",
     image: "coast",
@@ -124,6 +143,8 @@ export const places: Place[] = [
     category: "city",
     price: 800,
     minutes: 75,
+    openHour: 9,
+    closeHour: 20,
     diary:
       "高いところから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。",
   },
@@ -135,6 +156,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 60,
+    openHour: 7,
+    closeHour: 20,
     diary: "港のほうから潮の香り。海のある暮らしって、どんな感じなんだろう。",
   },
   {
@@ -145,6 +168,8 @@ export const places: Place[] = [
     category: "city",
     price: 0,
     minutes: 80,
+    openHour: 7,
+    closeHour: 20,
     diary:
       "列車を降りたら、空が広くなった気がしたよ。海へ続く道を探してみよう。",
   },
@@ -156,6 +181,8 @@ export const places: Place[] = [
     category: "sea",
     price: 0,
     minutes: 120,
+    openHour: 7,
+    closeHour: 19,
     diary:
       "青い海が、どこまでも続いていたよ。波の音を聞いていたら、帰りたくなくなっちゃった。",
     image: "coast",
@@ -168,6 +195,8 @@ export const places: Place[] = [
     category: "shrine",
     price: 0,
     minutes: 100,
+    openHour: 8,
+    closeHour: 18,
     diary:
       "大きな木に囲まれて、背筋がすっと伸びたよ。これからもいい旅ができますように。",
   },
@@ -179,6 +208,8 @@ export const places: Place[] = [
     category: "shrine",
     price: 0,
     minutes: 70,
+    openHour: 8,
+    closeHour: 18,
     diary:
       "木漏れ日の参道をゆっくり歩いたよ。葉っぱの揺れる音まで、聞こえるくらい静かだった。",
   },
@@ -190,6 +221,8 @@ export const places: Place[] = [
     category: "park",
     price: 450,
     minutes: 130,
+    openHour: 9,
+    closeHour: 17,
     diary:
       "広い芝生で、大きく深呼吸。今日はいつもより、たくさん歩けそうな気がする。",
   },
@@ -201,6 +234,8 @@ export const places: Place[] = [
     category: "sea",
     price: 0,
     minutes: 80,
+    openHour: 7,
+    closeHour: 19,
     diary:
       "海沿いを走る風が気持ちいいね。リュックも、なんだか軽くなったみたい。",
     image: "coast",

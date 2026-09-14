@@ -11,6 +11,7 @@ import {
   type Mode,
   type StoredMode,
   type Personality,
+  type Place,
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
@@ -49,6 +50,7 @@ export type Activity = {
   end: number;
   legs: Leg[];
   returning?: boolean;
+  pendingVisit?: boolean;
   label: string;
 };
 export type Trip = {
@@ -170,6 +172,20 @@ export function tripDay(t: Trip, at: number) {
     Math.max(1, Math.floor((at - t.startedAt) / DAY) + 1),
   );
 }
+function visitWindow(p: Place, at: number) {
+  const dayStart = jstStart(at),
+    openAt = dayStart + p.openHour * HOUR,
+    closeAt = dayStart + p.closeHour * HOUR;
+  return at >= openAt && at + p.minutes * 60000 <= closeAt;
+}
+function nextVisitOpen(p: Place, at: number) {
+  const dayStart = jstStart(at),
+    openAt = dayStart + p.openHour * HOUR,
+    closeAt = dayStart + p.closeHour * HOUR;
+  if (at < openAt) return openAt;
+  if (at + p.minutes * 60000 <= closeAt) return at;
+  return openAt + DAY;
+}
 function record(
   t: Trip,
   at: number,
@@ -229,6 +245,27 @@ function idleActivity(
     legs: [],
     label,
   };
+}
+function waitForVisit(t: Trip, at: number) {
+  const p = placeById[t.placeId],
+    openAt = nextVisitOpen(p, at),
+    returnMinutes = routeMinutes(getRoute(p.id, "hakata", t.personality));
+  if (
+    openAt + p.minutes * 60000 + returnMinutes * 60000 + HOUR >=
+    t.deadline
+  ) {
+    beginMove(t, "hakata", at, true);
+    return;
+  }
+  const activity = idleActivity(
+    t,
+    "rest",
+    at,
+    Math.max(60000, openAt - at),
+    `${p.name}が開くまで、ひと休み`,
+  );
+  activity.pendingVisit = true;
+  t.activity = activity;
 }
 function finish(t: Trip, at: number) {
   t.status = "completed";
@@ -405,6 +442,7 @@ function decide(t: Trip, at: number) {
         legs,
         cost,
         minutes,
+        arrivalAt: at + Math.ceil(minutes * 60000),
         score:
           random(t) * 40 +
           (t.visited.includes(p.id) ? -55 : 25) +
@@ -419,10 +457,10 @@ function decide(t: Trip, at: number) {
     })
     .filter(
       (c) =>
+        visitWindow(c.p, c.arrivalAt) &&
         c.cost <= t.balance - reserve(t, at, c.p.id) &&
-        at +
-          (c.minutes +
-            c.p.minutes +
+        c.arrivalAt +
+          (c.p.minutes +
             routeMinutes(getRoute(c.p.id, "hakata", t.personality))) *
             60000 +
           HOUR <
@@ -513,8 +551,10 @@ export function advance(t: Trip, now: number) {
       t.distanceKm += activity.legs.reduce((n, l) => n + l.km, 0);
       t.placeId = activity.to;
       if (activity.returning) finish(t, at);
-      else visit(t, at);
-    } else decide(t, at);
+      else if (visitWindow(placeById[t.placeId], at)) visit(t, at);
+      else waitForVisit(t, at);
+    } else if (activity.pendingVisit) visit(t, at);
+    else decide(t, at);
     if (t.status === "active" && t.activity.end <= at)
       throw new Error("旅の時刻が進みません");
   }
