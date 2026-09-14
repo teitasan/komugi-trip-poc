@@ -213,8 +213,8 @@ export const placeById = Object.fromEntries(
  * 福岡市内と近郊で使う鉄道ネットワーク。
  *
  * 駅の並びをデータとして持ち、隣駅だけでなく同一路線上の駅同士を
- * 直接結んだエッジを生成する。これで乗車中の運賃を駅ごとに二重計上
- * せず、路線距離から運賃と所要時間を算出できる。
+ * 直接結んだエッジを生成する。観光地はこのグラフの目的地ではなく、
+ * 観光地から複数の駅へ歩くアクセスリンクを通じて接続される。
  */
 export type RailStation = { id: string; name: string; point: Point };
 export type RailOperator = "subway" | "jr" | "nishitetsu";
@@ -433,23 +433,54 @@ export const railLineById = Object.fromEntries(
 ) as Record<string, RailLine>;
 
 export type PlaceStationAccess = { stationId: string; minutes: number };
-export const placeStationAccess: Record<string, PlaceStationAccess> = {
-  hakata: { stationId: "st_hakata", minutes: 3 },
-  canal: { stationId: "st_nakasu", minutes: 7 },
-  nakasu: { stationId: "st_nakasu", minutes: 3 },
-  tenjin: { stationId: "st_tenjin", minutes: 5 },
-  ohori: { stationId: "st_ohori", minutes: 5 },
-  maizuru: { stationId: "st_akasaka", minutes: 8 },
-  nishijin: { stationId: "st_nishijin", minutes: 4 },
-  momochi: { stationId: "st_nishijin", minutes: 17 },
-  tower: { stationId: "st_nishijin", minutes: 20 },
-  meinohama: { stationId: "st_meinohama", minutes: 5 },
-  itoshima: { stationId: "st_maebaru", minutes: 5 },
-  futami: { stationId: "st_kafuri", minutes: 28 },
-  dazaifu: { stationId: "st_nt_dazaifu", minutes: 4 },
-  kashii: { stationId: "st_kashii", minutes: 4 },
-  uminaka: { stationId: "st_saitozaki", minutes: 15 },
-  gannosu: { stationId: "st_gannosu", minutes: 4 },
+export const placeStationAccess: Record<string, PlaceStationAccess[]> = {
+  hakata: [{ stationId: "st_hakata", minutes: 3 }],
+  canal: [
+    { stationId: "st_nakasu", minutes: 7 },
+    { stationId: "st_gion", minutes: 8 },
+  ],
+  nakasu: [
+    { stationId: "st_nakasu", minutes: 3 },
+    { stationId: "st_gion", minutes: 8 },
+  ],
+  tenjin: [
+    { stationId: "st_tenjin", minutes: 5 },
+    { stationId: "st_tenjin_minami", minutes: 6 },
+    { stationId: "st_nt_tenjin", minutes: 7 },
+  ],
+  ohori: [
+    { stationId: "st_ohori", minutes: 5 },
+    { stationId: "st_tojinmachi", minutes: 9 },
+  ],
+  maizuru: [
+    { stationId: "st_akasaka", minutes: 8 },
+    { stationId: "st_ohori", minutes: 10 },
+  ],
+  nishijin: [
+    { stationId: "st_nishijin", minutes: 4 },
+    { stationId: "st_fujisaki", minutes: 10 },
+  ],
+  momochi: [
+    { stationId: "st_nishijin", minutes: 17 },
+    { stationId: "st_tojinmachi", minutes: 18 },
+  ],
+  tower: [
+    { stationId: "st_nishijin", minutes: 20 },
+    { stationId: "st_fujisaki", minutes: 20 },
+  ],
+  meinohama: [{ stationId: "st_meinohama", minutes: 5 }],
+  itoshima: [{ stationId: "st_maebaru", minutes: 5 }],
+  futami: [{ stationId: "st_kafuri", minutes: 28 }],
+  dazaifu: [{ stationId: "st_nt_dazaifu", minutes: 4 }],
+  kashii: [
+    { stationId: "st_kashii", minutes: 4 },
+    { stationId: "st_nt_kashii", minutes: 5 },
+  ],
+  uminaka: [{ stationId: "st_saitozaki", minutes: 15 }],
+  gannosu: [
+    { stationId: "st_gannosu", minutes: 4 },
+    { stationId: "st_wajiro", minutes: 22 },
+  ],
 };
 
 function walkEdge(a: string, b: string, ...middle: Point[]): Edge {
@@ -463,14 +494,15 @@ const localWalkEdges: Edge[] = [
   walkEdge("momochi", "tower"),
   walkEdge("itoshima", "futami", [33.5621, 130.2078], [33.5724, 130.2192], [33.5911, 130.2185], [33.6102, 130.2062], [33.6271, 130.2055]),
 ];
-const accessEdges: Edge[] = Object.entries(placeStationAccess).map(
-  ([placeId, access]) => ({
-    a: placeId,
-    b: access.stationId,
-    mode: "walk",
-    points: [placeById[placeId].point, stationById[access.stationId].point],
-    minutes: access.minutes,
-  }),
+const accessEdges: Edge[] = Object.entries(placeStationAccess).flatMap(
+  ([placeId, accesses]) =>
+    accesses.map((access) => ({
+      a: placeId,
+      b: access.stationId,
+      mode: "walk" as const,
+      points: [placeById[placeId].point, stationById[access.stationId].point],
+      minutes: access.minutes,
+    })),
 );
 const transferEdges: Edge[] = [
   {
