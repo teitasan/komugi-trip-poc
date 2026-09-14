@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>こむぎの旅｜データ台帳</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #2f3a3d;
+        --muted: #718084;
+        --line: #dce5e4;
+        --paper: #fffdf8;
+        --panel: #ffffff;
+        --accent: #d5774f;
+        --accent-soft: #fff0e8;
+        --green: #6c987d;
+        --shadow: 0 18px 45px rgba(71, 87, 82, 0.1);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: #f4f6f3;
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+        line-height: 1.55;
+      }
+      .shell { max-width: 1500px; margin: 0 auto; padding: 34px 24px 64px; }
+      header { display: flex; gap: 24px; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
+      h1, h2 { margin: 0; letter-spacing: .02em; }
+      h1 { font-size: clamp(24px, 3vw, 38px); font-weight: 700; }
+      h2 { font-size: 20px; }
+      .eyebrow { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .14em; margin-bottom: 6px; }
+      .intro { max-width: 760px; color: var(--muted); margin: 9px 0 0; }
+      .toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+      button, .file-button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 9px 14px;
+        background: var(--panel);
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+      }
+      button:hover, .file-button:hover { border-color: var(--accent); color: var(--accent); }
+      button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+      button.danger { color: #a85c55; }
+      input[type=file] { display: none; }
+      .notice {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 42px;
+        padding: 10px 14px;
+        margin-bottom: 18px;
+        border: 1px solid #dce9df;
+        border-radius: 12px;
+        background: #f5fbf5;
+        color: var(--green);
+        font-size: 13px;
+      }
+      .notice strong { color: var(--ink); }
+      .panel {
+        margin: 18px 0;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+      .panel-head { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .panel-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+      .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+      table { width: 100%; min-width: 1050px; border-collapse: collapse; font-size: 13px; }
+      th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      tr:last-child td { border-bottom: 0; }
+      th { position: sticky; top: 0; z-index: 1; background: #f7faf8; color: #5c6d70; font-size: 11px; white-space: nowrap; }
+      td[contenteditable="true"] { min-width: 88px; outline: none; background: #fff; }
+      td[contenteditable="true"]:focus { box-shadow: inset 0 0 0 2px #f2b79c; background: #fffaf7; }
+      td[data-field="diary"] { min-width: 320px; }
+      td[data-field="actionLabel"] { min-width: 190px; }
+      td[data-field="accessStations"] { min-width: 170px; }
+      td[data-field="id"], td[data-field="role"], td[data-field="category"], td[data-field="image"] { color: #617174; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+      td[data-field="price"], td[data-field="minutes"], td[data-field="openHour"], td[data-field="closeHour"] { min-width: 74px; white-space: nowrap; }
+      .delete-cell { width: 64px; text-align: center; }
+      .delete-row { padding: 4px 8px; border: 0; color: #a85c55; background: transparent; font-size: 12px; }
+      .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+      .legend code { padding: 2px 5px; border-radius: 4px; background: #f0f3f2; color: var(--ink); }
+      footer { color: var(--muted); font-size: 12px; margin-top: 24px; }
+      @media (max-width: 760px) {
+        .shell { padding: 24px 12px 45px; }
+        header { display: block; }
+        .toolbar { justify-content: flex-start; margin-top: 16px; }
+        .panel { padding: 12px; border-radius: 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div>
+          <div class="eyebrow">KOMUGI TRIP · CONTENT LEDGER</div>
+          <h1>こむぎの旅 データ台帳</h1>
+          <p class="intro">
+            表のセルを直接編集できます。保存した内容はこのブラウザに保持され、JSONを書き出して次のデータ反映に渡せます。
+            現在のシミュレーションは <code>lib/travel-data.ts</code> を参照しています。
+          </p>
+        </div>
+        <div class="toolbar">
+          <button class="primary" id="save">このブラウザに保存</button>
+          <button id="copy">JSONをコピー</button>
+          <button id="download">JSONを書き出す</button>
+          <label class="file-button" for="upload">JSONを読み込む</label>
+          <input id="upload" type="file" accept="application/json,.json" />
+          <button class="danger" id="reset">初期データに戻す</button>
+        </div>
+      </header>
+
+      <div class="notice" id="notice" role="status"><strong>使い方</strong> セルを編集し、「このブラウザに保存」または「JSONを書き出す」を押してください。</div>
+      <div id="tables"></div>
+      <footer>
+        schemaVersion: 1 · <code>openHour / closeHour</code> は日本時間。<code>accessStations</code> は路線グラフの駅IDをカンマ区切りで記入します。
+      </footer>
+    </main>
+    <script>
+      const seed = {
+        schemaVersion: 1,
+        places: [
+          { id: "hakata", role: "start", name: "博多駅", area: "博多", category: "city", price: 0, minutes: 30, openHour: 7, closeHour: 20, actionLabel: "博多駅で、旅じたく", diary: "リュックを背負ったら、なんだか少し勇気が出たよ。いってきます！", image: "", accessStations: "st_hakata" },
+          { id: "canal", role: "destination", name: "博多の運河沿い", area: "博多", category: "city", price: 0, minutes: 50, openHour: 7, closeHour: 20, actionLabel: "博多の運河沿いをおさんぽ", diary: "水辺のベンチで、ひと休み。行き交う人を眺めるのも、旅の楽しみだね。", image: "", accessStations: "st_nakasu,st_gion" },
+          { id: "nakasu", role: "destination", name: "中洲の川沿い", area: "中洲", category: "city", price: 0, minutes: 70, openHour: 7, closeHour: 20, actionLabel: "中洲の川沿いをおさんぽ", diary: "川面がきらきらしていたよ。屋台から、おいしそうな匂い。おなかが鳴っちゃった。", image: "", accessStations: "st_nakasu,st_gion" },
+          { id: "tenjin", role: "destination", name: "天神のまち歩き", area: "天神", category: "city", price: 0, minutes: 60, openHour: 7, closeHour: 20, actionLabel: "天神のまち歩きをおさんぽ", diary: "にぎやかな道を、てくてく。小さな路地を見つけると、つい曲がりたくなるんだ。", image: "", accessStations: "st_tenjin,st_tenjin_minami,st_nt_tenjin" },
+          { id: "ohori", role: "destination", name: "大濠公園", area: "大濠", category: "park", price: 0, minutes: 90, openHour: 7, closeHour: 19, actionLabel: "大濠公園をおさんぽ", diary: "池のまわりを一周したよ。水鳥を数えていたら、いつのまにか時間がたっていた。", image: "", accessStations: "st_ohori,st_tojinmachi" },
+          { id: "maizuru", role: "destination", name: "舞鶴公園", area: "大濠", category: "park", price: 0, minutes: 75, openHour: 7, closeHour: 19, actionLabel: "舞鶴公園をおさんぽ", diary: "石垣の上から、福岡の街が見えたよ。ずっと昔にも、ここを旅した誰かがいたのかな。", image: "", accessStations: "st_akasaka,st_ohori" },
+          { id: "nishijin", role: "destination", name: "西新の商店街", area: "西新", category: "city", price: 0, minutes: 70, openHour: 7, closeHour: 20, actionLabel: "西新の商店街をおさんぽ", diary: "商店街を歩いていたら、すっかりこの街の気分。小さな寄り道がいちばん好きかも。", image: "", accessStations: "st_nishijin,st_fujisaki" },
+          { id: "momochi", role: "destination", name: "百道の海辺", area: "百道", category: "sea", price: 0, minutes: 100, openHour: 7, closeHour: 19, actionLabel: "海を眺めて、ひと休み", diary: "はじめて見る、福岡の海！靴に砂が入ったけど、なんだかそれもうれしいな。", image: "coast", accessStations: "st_nishijin,st_tojinmachi" },
+          { id: "tower", role: "destination", name: "百道の展望スポット", area: "百道", category: "city", price: 800, minutes: 75, openHour: 9, closeHour: 20, actionLabel: "百道の展望スポットをおさんぽ", diary: "高いところから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。", image: "", accessStations: "st_nishijin,st_fujisaki" },
+          { id: "meinohama", role: "destination", name: "姪浜の港町", area: "姪浜", category: "city", price: 0, minutes: 60, openHour: 7, closeHour: 20, actionLabel: "姪浜の港町をおさんぽ", diary: "港のほうから潮の香り。海のある暮らしって、どんな感じなんだろう。", image: "", accessStations: "st_meinohama" },
+          { id: "itoshima", role: "destination", name: "糸島の小さなまち", area: "糸島", category: "city", price: 0, minutes: 80, openHour: 7, closeHour: 20, actionLabel: "糸島の小さなまちをおさんぽ", diary: "列車を降りたら、空が広くなった気がしたよ。海へ続く道を探してみよう。", image: "", accessStations: "st_maebaru" },
+          { id: "futami", role: "destination", name: "糸島の海岸", area: "糸島", category: "sea", price: 0, minutes: 120, openHour: 7, closeHour: 19, actionLabel: "海を眺めて、ひと休み", diary: "青い海が、どこまでも続いていたよ。波の音を聞いていたら、帰りたくなくなっちゃった。", image: "coast", accessStations: "st_kafuri" },
+          { id: "dazaifu", role: "destination", name: "太宰府の大きな神社", area: "太宰府", category: "shrine", price: 0, minutes: 100, openHour: 8, closeHour: 18, actionLabel: "太宰府の大きな神社をおさんぽ", diary: "大きな木に囲まれて、背筋がすっと伸びたよ。これからもいい旅ができますように。", image: "", accessStations: "st_nt_dazaifu" },
+          { id: "kashii", role: "destination", name: "香椎の参道", area: "香椎", category: "shrine", price: 0, minutes: 70, openHour: 8, closeHour: 18, actionLabel: "香椎の参道をおさんぽ", diary: "木漏れ日の参道をゆっくり歩いたよ。葉っぱの揺れる音まで、聞こえるくらい静かだった。", image: "", accessStations: "st_kashii,st_nt_kashii" },
+          { id: "uminaka", role: "destination", name: "海の中道の公園", area: "海の中道", category: "park", price: 450, minutes: 130, openHour: 9, closeHour: 17, actionLabel: "海の中道の公園をおさんぽ", diary: "広い芝生で、大きく深呼吸。今日はいつもより、たくさん歩けそうな気がする。", image: "", accessStations: "st_saitozaki" },
+          { id: "gannosu", role: "destination", name: "雁の巣の海沿い", area: "海の中道", category: "sea", price: 0, minutes: 80, openHour: 7, closeHour: 19, actionLabel: "海を眺めて、ひと休み", diary: "海沿いを走る風が気持ちいいね。リュックも、なんだか軽くなったみたい。", image: "coast", accessStations: "st_gannosu,st_wajiro" }
+        ],
+        foods: [
+          { id: "ramen", name: "豚骨ラーメン", price: 900, slots: "lunch,dinner", preference: "foodie", diary: "スープをひと口。おいしくて、思わず耳がぴんとしたよ。福岡に来てよかった！", image: "ramen" },
+          { id: "goboten-udon", name: "ごぼう天うどん", price: 550, slots: "lunch,dinner", preference: "frugal", diary: "やわらかいうどんと、さくさくのごぼう天。お財布にやさしくて、おなかもぽかぽか。", image: "" },
+          { id: "motsunabe", name: "もつ鍋", price: 2100, slots: "dinner", preference: "foodie", diary: "今日はちょっとぜいたく。お鍋を囲むだけで、ひとり旅もあたたかくなるね。", image: "" },
+          { id: "mizutaki", name: "水炊き", price: 2400, slots: "dinner", preference: "foodie", diary: "白いスープに、おいしさがぎゅっと詰まっていたよ。最後まで、大事にいただきました。", image: "" },
+          { id: "mentai-onigiri", name: "明太子のおにぎり", price: 350, slots: "breakfast,lunch,dinner", preference: "frugal,rail", diary: "おにぎりを持って、ベンチでひと休み。ちょっとぴりっとするのが、好きなんだ。", image: "" },
+          { id: "yakitori", name: "焼き鳥", price: 1200, slots: "dinner", preference: "foodie", diary: "炭の香りに誘われて、つい寄り道。キャベツも一緒に、いただきます。", image: "" },
+          { id: "gomasaba", name: "ごまさば定食", price: 1600, slots: "lunch,dinner", preference: "foodie", diary: "ごまの香りと、新鮮なお魚。ごはんがどんどん進んじゃったよ。", image: "" },
+          { id: "egg-sand", name: "たまごサンド", price: 450, slots: "breakfast,lunch", preference: "cyclist", diary: "ふわふわのたまごサンドで、元気をチャージ。今日もいっぱい歩こう。", image: "" },
+          { id: "bread-milk", name: "朝のパンとミルク", price: 500, slots: "breakfast", preference: "foodie", diary: "窓のそばで朝ごはん。今日の地図を広げる、この時間が好き。", image: "" },
+          { id: "omusubi", name: "おむすび朝ごはん", price: 350, slots: "breakfast", preference: "frugal", diary: "朝は小さなおむすびから。おこづかいを大事にしながら、今日も楽しむよ。", image: "" },
+          { id: "yaki-curry", name: "焼きカレー", price: 1100, slots: "lunch,dinner", preference: "rail", diary: "こんがりチーズの下に、あつあつのカレー。ふうふうしながら食べたよ。", image: "" },
+          { id: "kaisendon", name: "海の幸の丼", price: 1800, slots: "lunch", preference: "foodie,cyclist", diary: "海の幸がぎゅっと詰まった丼。ひと口ごとに、うれしくなるね。小さなぜいたく、ありがとう。", image: "" }
+        ],
+        hotels: [
+          { id: "small-inn", name: "まちの小さな宿", price: 3900 },
+          { id: "station-simple", name: "駅前のシンプルな宿", price: 4500 },
+          { id: "quiet-hotel", name: "静かな通りのホテル", price: 5400 },
+          { id: "relaxed-hotel", name: "ゆったりした街のホテル", price: 6500 },
+          { id: "window-hotel", name: "窓辺のあるホテル", price: 7200 }
+        ]
+      };
+
+      const storageKey = "komugi-trip-content-v1";
+      const definitions = {
+        places: {
+          title: "観光地・出発地点",
+          note: "観光地を1行ずつ編集します。営業時間は日本時間で、滞在時間全体が収まる必要があります。",
+          fields: [
+            ["id", "ID"], ["role", "役割"], ["name", "名称"], ["area", "エリア"], ["category", "カテゴリ"],
+            ["price", "観光費"], ["minutes", "滞在分"], ["openHour", "開場"], ["closeHour", "閉場"],
+            ["actionLabel", "行動表示"], ["diary", "たより本文"], ["image", "画像ID"], ["accessStations", "最寄り駅ID"]
+          ],
+          blank: { id: "new-place", role: "destination", name: "新しい観光地", area: "福岡", category: "city", price: 0, minutes: 60, openHour: 7, closeHour: 20, actionLabel: "新しい観光地をおさんぽ", diary: "ここで何をしたか書く。", image: "", accessStations: "" }
+        },
+        foods: {
+          title: "食事",
+          note: "slots は breakfast / lunch / dinner、preference は foodie / frugal / rail / cyclist をカンマ区切りで記入します。",
+          fields: [["id", "ID"], ["name", "料理名"], ["price", "価格"], ["slots", "時間帯"], ["preference", "好み補正"], ["diary", "たより本文"], ["image", "画像ID"]],
+          blank: { id: "new-food", name: "新しい料理", price: 500, slots: "lunch", preference: "foodie", diary: "おいしくいただきました。", image: "" }
+        },
+        hotels: {
+          title: "宿泊",
+          note: "宿泊費は1泊分です。",
+          fields: [["id", "ID"], ["name", "宿名"], ["price", "1泊料金"]],
+          blank: { id: "new-hotel", name: "新しい宿", price: 5000 }
+        }
+      };
+
+      let state = load();
+      const tables = document.querySelector("#tables");
+      const notice = document.querySelector("#notice");
+      const numberFields = new Set(["price", "minutes", "openHour", "closeHour"]);
+      const esc = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
+
+      function load() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+          if (saved && Array.isArray(saved.places) && Array.isArray(saved.foods) && Array.isArray(saved.hotels)) return saved;
+        } catch {}
+        return structuredClone(seed);
+      }
+      function setNotice(message) { notice.innerHTML = `<strong>状態</strong> ${esc(message)}`; }
+      function render() {
+        tables.replaceChildren();
+        for (const [key, definition] of Object.entries(definitions)) {
+          const section = document.createElement("section");
+          section.className = "panel";
+          section.innerHTML = `<div class="panel-head"><div><h2>${esc(definition.title)}</h2><p>${esc(definition.note)}</p></div><button data-add="${key}">行を追加</button></div>`;
+          const wrap = document.createElement("div");
+          wrap.className = "table-wrap";
+          const table = document.createElement("table");
+          const head = document.createElement("tr");
+          for (const [, label] of definition.fields) { const th = document.createElement("th"); th.textContent = label; head.append(th); }
+          const deleteHead = document.createElement("th"); deleteHead.textContent = ""; head.append(deleteHead);
+          const thead = document.createElement("thead"); thead.append(head); table.append(thead);
+          const body = document.createElement("tbody");
+          for (const item of state[key]) {
+            const row = document.createElement("tr");
+            for (const [field] of definition.fields) {
+              const cell = document.createElement("td");
+              cell.contentEditable = "true";
+              cell.dataset.field = field;
+              cell.textContent = item[field] ?? "";
+              row.append(cell);
+            }
+            const deleteCell = document.createElement("td");
+            deleteCell.className = "delete-cell";
+            deleteCell.innerHTML = `<button class="delete-row" title="この行を削除">削除</button>`;
+            row.append(deleteCell);
+            body.append(row);
+          }
+          table.append(body); wrap.append(table); section.append(wrap); tables.append(section);
+        }
+        const legend = document.createElement("div");
+        legend.className = "legend";
+        legend.innerHTML = "カテゴリ例: <code>city</code> <code>park</code> <code>sea</code> <code>shrine</code> · 役割: <code>start</code> / <code>destination</code>";
+        tables.append(legend);
+      }
+      function collect() {
+        const next = { schemaVersion: 1 };
+        for (const [key, definition] of Object.entries(definitions)) {
+          const section = [...tables.querySelectorAll(".panel")].find((node) => node.querySelector(`[data-add="${key}"]`));
+          next[key] = [...section.querySelectorAll("tbody tr")].map((row) => {
+            const item = {};
+            for (const [field] of definition.fields) {
+              const value = row.querySelector(`[data-field="${field}"]`).textContent.trim();
+              item[field] = numberFields.has(field) ? (Number(value) || 0) : value;
+            }
+            return item;
+          });
+        }
+        return next;
+      }
+      function save(show = true) {
+        state = collect();
+        localStorage.setItem(storageKey, JSON.stringify(state));
+        if (show) setNotice(`保存しました（観光地 ${state.places.length}件・食事 ${state.foods.length}件・宿泊 ${state.hotels.length}件）。`);
+      }
+      function exportJson() {
+        save(false);
+        const blob = new Blob([JSON.stringify({ ...state, updatedAt: new Date().toISOString() }, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "komugi-trip-data.json";
+        link.click();
+        URL.revokeObjectURL(link.href);
+        setNotice("JSONを書き出しました。次のデータ反映にそのファイルを使えます。");
+      }
+      document.querySelector("#save").addEventListener("click", () => save());
+      document.querySelector("#download").addEventListener("click", exportJson);
+      document.querySelector("#copy").addEventListener("click", async () => {
+        save(false);
+        await navigator.clipboard.writeText(JSON.stringify(state, null, 2));
+        setNotice("JSONをクリップボードにコピーしました。");
+      });
+      document.querySelector("#reset").addEventListener("click", () => {
+        if (!confirm("編集内容を破棄して初期データに戻しますか？")) return;
+        state = structuredClone(seed); localStorage.removeItem(storageKey); render(); setNotice("初期データに戻しました。");
+      });
+      document.querySelector("#upload").addEventListener("change", async (event) => {
+        const file = event.target.files?.[0]; if (!file) return;
+        try {
+          const imported = JSON.parse(await file.text());
+          if (!Array.isArray(imported.places) || !Array.isArray(imported.foods) || !Array.isArray(imported.hotels)) throw new Error("必要な表がありません");
+          state = { schemaVersion: 1, places: imported.places, foods: imported.foods, hotels: imported.hotels };
+          localStorage.setItem(storageKey, JSON.stringify(state)); render(); setNotice("JSONを読み込みました。");
+        } catch (error) { setNotice(`読み込みに失敗しました: ${error.message}`); }
+        event.target.value = "";
+      });
+      tables.addEventListener("click", (event) => {
+        const add = event.target.closest("[data-add]");
+        if (add) {
+          save(false);
+          const key = add.dataset.add;
+          state[key].push(structuredClone(definitions[key].blank));
+          render(); setNotice("行を追加しました。編集後に保存してください。");
+          return;
+        }
+        const del = event.target.closest(".delete-row");
+        if (del) {
+          del.closest("tr").remove();
+          setNotice("行を削除しました。保存すると確定します。");
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>
