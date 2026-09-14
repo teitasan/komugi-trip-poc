@@ -683,7 +683,7 @@ export type Food = {
 export const foods: Food[] = [
   {
     name: "豚骨ラーメン",
-    price: 900,
+    price: 800,
     slots: ["lunch", "dinner"],
     preference: ["foodie"],
     diary:
@@ -744,11 +744,18 @@ export const foods: Food[] = [
     diary: "ふわふわのたまごサンドで、元気をチャージ。今日もいっぱい歩こう。",
   },
   {
-    name: "朝のパンとミルク",
+    name: "クロワッサン",
     price: 500,
     slots: ["breakfast"],
     preference: ["foodie"],
-    diary: "窓のそばで朝ごはん。今日の地図を広げる、この時間が好き。",
+    diary: "焼きたてのクロワッサンで朝ごはん。今日の地図を広げる、この時間が好き。",
+  },
+  {
+    name: "明太フランス",
+    price: 450,
+    slots: ["breakfast", "lunch"],
+    preference: ["foodie", "frugal"],
+    diary: "明太子の塩気と香ばしいパン。ひと口で、旅の元気が出てきたよ。",
   },
   {
     name: "おむすび朝ごはん",
@@ -766,12 +773,12 @@ export const foods: Food[] = [
     diary: "こんがりチーズの下に、あつあつのカレー。ふうふうしながら食べたよ。",
   },
   {
-    name: "海の幸の丼",
+    name: "海鮮丼",
     price: 1800,
     slots: ["lunch"],
     preference: ["foodie", "cyclist"],
     diary:
-      "海の幸がぎゅっと詰まった丼。ひと口ごとに、うれしくなるね。小さなぜいたく、ありがとう。",
+      "海鮮がぎゅっと詰まった丼。ひと口ごとに、うれしくなるね。小さなぜいたく、ありがとう。",
   },
 ];
 export const hotels = [
