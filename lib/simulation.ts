@@ -12,6 +12,7 @@ import {
   type StoredMode,
   type Personality,
   type Place,
+  type Food,
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
@@ -178,6 +179,14 @@ function visitWindow(p: Place, at: number) {
     closeAt = dayStart + p.closeHour * HOUR;
   return at >= openAt && at + p.minutes * 60000 <= closeAt;
 }
+function foodWindow(f: Food, at: number) {
+  const minutes = (at - jstStart(at)) / 60000,
+    open = f.openHour * 60,
+    close = f.closeHour * 60;
+  return open < close
+    ? minutes >= open && minutes < close
+    : minutes >= open || minutes < close;
+}
 function nextVisitOpen(p: Place, at: number) {
   const dayStart = jstStart(at),
     openAt = dayStart + p.openHour * HOUR,
@@ -214,11 +223,11 @@ function record(
 export function reserve(t: Trip, at: number, place = t.placeId) {
   let amount = routeCost(getRoute(place, "hakata", t.personality));
   for (let date = jstStart(at); date < t.deadline; date += DAY) {
-    for (const hour of [8, 12, 18, 21]) {
+    for (const hour of [8, 12, 18, 23]) {
       const when = date + hour * HOUR,
         key = dateKey(date);
       if (when < at || when >= t.deadline) continue;
-      if (hour === 21) {
+      if (hour === 23) {
         if (!t.nights.includes(key)) amount += 3900;
       } else {
         const slot =
@@ -347,7 +356,71 @@ function decide(t: Trip, at: number) {
   const hour = new Date(at + 9 * HOUR).getUTCHours(),
     key = dateKey(at);
   const nightKey = hour < 7 ? dateKey(at - DAY) : key;
-  if ((hour >= 21 || hour < 7) && !t.nights.includes(nightKey)) {
+  const slot =
+    hour >= 7 && hour < 11
+      ? "breakfast"
+      : hour >= 11 && hour < 15
+        ? "lunch"
+        : hour >= 17 && hour < 24
+          ? "dinner"
+          : null;
+  if (slot && !t.meals.includes(`${key}:${slot}`)) {
+    const free = t.balance - reserve(t, at);
+    let candidates = foods.filter(
+      (f) =>
+        f.slots.includes(slot) &&
+        foodWindow(f, at) &&
+        f.price <= free,
+    );
+    if (!candidates.length)
+      candidates = foods.filter(
+        (f) =>
+          f.slots.includes(slot) &&
+          foodWindow(f, at) &&
+          f.price === 350 &&
+          f.price <= t.balance - routeCost(home),
+      );
+    if (candidates.length) {
+      t.meals.push(`${key}:${slot}`);
+      const late = hour >= 21 || hour < 7;
+      const lateOpenBonus = late ? 24 : 0;
+      const weighted = candidates
+        .map((f) => ({
+          f,
+          score:
+            random(t) * 35 +
+            (f.preference.includes(t.personality) ? 40 : 0) -
+            Math.max(0, -Math.log(f.weight) * 24) -
+            (t.personality === "frugal" ? f.price / 20 : 0) -
+            (t.entries.some((e) => e.title === `${f.name}、いただきます。`)
+              ? 25
+              : 0) +
+            (f.closeHour >= 24 ? lateOpenBonus : 0),
+        }))
+        .sort((a, b) => b.score - a.score);
+      const f = weighted[0].f;
+      record(
+        t,
+        at,
+        "food",
+        `${f.name}、いただきます。`,
+        (free < 1200
+          ? "帰り道と宿のお金を残して、今日はお手頃なごはん。"
+          : "") + f.diary,
+        f.price,
+        f.image,
+      );
+      t.activity = idleActivity(
+        t,
+        "meal",
+        at,
+        45 * 60000,
+        `${f.name}を食べているよ`,
+      );
+      return;
+    }
+  }
+  if ((hour >= 23 || hour < 7) && !t.nights.includes(nightKey)) {
     t.nights.push(nightKey);
     let choices = hotels.filter((h) => h.price <= t.balance - reserve(t, at));
     if (!choices.length) choices = [hotels[0]];
@@ -374,62 +447,6 @@ function decide(t: Trip, at: number) {
       "宿で、すやすや",
     );
     return;
-  }
-  const slot =
-    hour >= 7 && hour < 11
-      ? "breakfast"
-      : hour >= 11 && hour < 15
-        ? "lunch"
-        : hour >= 17 && hour < 21
-          ? "dinner"
-          : null;
-  if (slot && !t.meals.includes(`${key}:${slot}`)) {
-    t.meals.push(`${key}:${slot}`);
-    const free = t.balance - reserve(t, at);
-    let candidates = foods.filter(
-      (f) => f.slots.includes(slot) && f.price <= free,
-    );
-    if (!candidates.length)
-      candidates = foods.filter(
-        (f) =>
-          f.slots.includes(slot) &&
-          f.price === 350 &&
-          f.price <= t.balance - routeCost(home),
-      );
-    if (candidates.length) {
-      const weighted = candidates
-        .map((f) => ({
-          f,
-          score:
-            random(t) * 35 +
-            (f.preference.includes(t.personality) ? 40 : 0) -
-            (t.personality === "frugal" ? f.price / 20 : 0) -
-            (t.entries.some((e) => e.title === `${f.name}、いただきます。`)
-              ? 25
-              : 0),
-        }))
-        .sort((a, b) => b.score - a.score);
-      const f = weighted[0].f;
-      record(
-        t,
-        at,
-        "food",
-        `${f.name}、いただきます。`,
-        (free < 1200
-          ? "帰り道と宿のお金を残して、今日はお手頃なごはん。"
-          : "") + f.diary,
-        f.price,
-        f.image,
-      );
-      t.activity = idleActivity(
-        t,
-        "meal",
-        at,
-        45 * 60000,
-        `${f.name}を食べているよ`,
-      );
-      return;
-    }
   }
   const candidates = places
     .filter((p) => p.id !== t.placeId && p.id !== "hakata")

@@ -675,6 +675,11 @@ export const edges: Edge[] = [
 export type Food = {
   name: string;
   price: number;
+  /** Base selection weight. Local specialties are 1; everyday chains are lower. */
+  weight: number;
+  /** Local (JST) opening window. closeHour may be 24 for all-day service. */
+  openHour: number;
+  closeHour: number;
   slots: string[];
   preference: Personality[];
   diary: string;
@@ -684,6 +689,9 @@ export const foods: Food[] = [
   {
     name: "豚骨ラーメン",
     price: 800,
+    weight: 1,
+    openHour: 10,
+    closeHour: 22,
     slots: ["lunch", "dinner"],
     preference: ["foodie"],
     diary:
@@ -693,6 +701,9 @@ export const foods: Food[] = [
   {
     name: "ごぼう天うどん",
     price: 550,
+    weight: 1,
+    openHour: 10,
+    closeHour: 21,
     slots: ["lunch", "dinner"],
     preference: ["frugal"],
     diary:
@@ -701,6 +712,9 @@ export const foods: Food[] = [
   {
     name: "もつ鍋",
     price: 2100,
+    weight: 1,
+    openHour: 17,
+    closeHour: 22,
     slots: ["dinner"],
     preference: ["foodie"],
     diary:
@@ -709,6 +723,9 @@ export const foods: Food[] = [
   {
     name: "水炊き",
     price: 2400,
+    weight: 1,
+    openHour: 17,
+    closeHour: 22,
     slots: ["dinner"],
     preference: ["foodie"],
     diary:
@@ -717,6 +734,9 @@ export const foods: Food[] = [
   {
     name: "明太子のおにぎり",
     price: 350,
+    weight: 1,
+    openHour: 7,
+    closeHour: 21,
     slots: ["breakfast", "lunch", "dinner"],
     preference: ["frugal", "rail"],
     diary:
@@ -725,6 +745,9 @@ export const foods: Food[] = [
   {
     name: "焼き鳥",
     price: 1200,
+    weight: 1,
+    openHour: 17,
+    closeHour: 23,
     slots: ["dinner"],
     preference: ["foodie"],
     diary: "炭の香りに誘われて、つい寄り道。キャベツも一緒に、いただきます。",
@@ -732,6 +755,9 @@ export const foods: Food[] = [
   {
     name: "ごまさば定食",
     price: 1600,
+    weight: 1,
+    openHour: 11,
+    closeHour: 21,
     slots: ["lunch", "dinner"],
     preference: ["foodie"],
     diary: "ごまの香りと、新鮮なお魚。ごはんがどんどん進んじゃったよ。",
@@ -739,6 +765,9 @@ export const foods: Food[] = [
   {
     name: "たまごサンド",
     price: 450,
+    weight: 1,
+    openHour: 7,
+    closeHour: 15,
     slots: ["breakfast", "lunch"],
     preference: ["cyclist"],
     diary: "ふわふわのたまごサンドで、元気をチャージ。今日もいっぱい歩こう。",
@@ -746,6 +775,9 @@ export const foods: Food[] = [
   {
     name: "クロワッサン",
     price: 500,
+    weight: 1,
+    openHour: 7,
+    closeHour: 11,
     slots: ["breakfast"],
     preference: ["foodie"],
     diary: "焼きたてのクロワッサンで朝ごはん。今日の地図を広げる、この時間が好き。",
@@ -753,6 +785,9 @@ export const foods: Food[] = [
   {
     name: "明太フランス",
     price: 450,
+    weight: 1,
+    openHour: 7,
+    closeHour: 18,
     slots: ["breakfast", "lunch"],
     preference: ["foodie", "frugal"],
     diary: "明太子の塩気と香ばしいパン。ひと口で、旅の元気が出てきたよ。",
@@ -760,6 +795,9 @@ export const foods: Food[] = [
   {
     name: "おむすび朝ごはん",
     price: 350,
+    weight: 1,
+    openHour: 7,
+    closeHour: 11,
     slots: ["breakfast"],
     preference: ["frugal"],
     diary:
@@ -768,6 +806,9 @@ export const foods: Food[] = [
   {
     name: "焼きカレー",
     price: 1100,
+    weight: 1,
+    openHour: 11,
+    closeHour: 21,
     slots: ["lunch", "dinner"],
     preference: ["rail"],
     diary: "こんがりチーズの下に、あつあつのカレー。ふうふうしながら食べたよ。",
@@ -775,10 +816,46 @@ export const foods: Food[] = [
   {
     name: "海鮮丼",
     price: 1800,
+    weight: 1,
+    openHour: 11,
+    closeHour: 15,
     slots: ["lunch"],
     preference: ["foodie", "cyclist"],
     diary:
       "海鮮がぎゅっと詰まった丼。ひと口ごとに、うれしくなるね。小さなぜいたく、ありがとう。",
+  },
+  {
+    name: "コンビニ弁当",
+    price: 500,
+    weight: 0.35,
+    openHour: 0,
+    closeHour: 24,
+    slots: ["breakfast", "lunch", "dinner"],
+    preference: ["frugal", "rail"],
+    diary:
+      "今日は気軽にコンビニ弁当。買ったらすぐ食べられるのも、旅の味方だね。",
+  },
+  {
+    name: "牛丼",
+    price: 650,
+    weight: 0.35,
+    openHour: 5,
+    closeHour: 24,
+    slots: ["lunch", "dinner"],
+    preference: ["frugal"],
+    diary:
+      "あつあつの牛丼を、ぱぱっといただきます。おなかいっぱい、もうひと歩きできそう。",
+  },
+  {
+    name: "ハンバーガー",
+    price: 700,
+    weight: 0.3,
+    openHour: 7,
+    closeHour: 24,
+    slots: ["breakfast", "lunch", "dinner"],
+    preference: [],
+    diary:
+      "ハンバーガーを片手にひと休み。いつもの味があると、旅先でもほっとするね。",
   },
 ];
 export const hotels = [

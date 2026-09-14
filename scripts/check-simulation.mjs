@@ -112,6 +112,17 @@ for (const [from, to] of [
   assert(routeMinutes(route) > 0);
   assert(routeCost(route) >= 0);
 }
+const lateStart = Date.UTC(2026, 8, 14, 14); // 23:00 JST
+const lateTrip = createTrip("late-food", 3, 10000, "foodie", lateStart, 1);
+advance(lateTrip, lateStart + 5 * 60000);
+const lateFood = lateTrip.entries.find((entry) => entry.category === "food");
+assert(lateFood, "late arrival did not create a meal");
+assert(
+  ["コンビニ弁当", "牛丼", "ハンバーガー"].some((name) =>
+    lateFood.title.startsWith(`${name}、`),
+  ),
+  `late arrival selected an unavailable local meal: ${lateFood.title}`,
+);
 console.log(
-  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, and walk/train route data passed.`,
+  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, walk/train route data, and late-night chain fallback passed.`,
 );

@@ -82,7 +82,7 @@
       td[data-field="actionLabel"] { min-width: 190px; }
       td[data-field="accessStations"] { min-width: 170px; }
       td[data-field="id"], td[data-field="role"], td[data-field="category"], td[data-field="image"] { color: #617174; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-      td[data-field="price"], td[data-field="minutes"], td[data-field="openHour"], td[data-field="closeHour"] { min-width: 74px; white-space: nowrap; }
+      td[data-field="price"], td[data-field="weight"], td[data-field="minutes"], td[data-field="openHour"], td[data-field="closeHour"] { min-width: 74px; white-space: nowrap; }
       .delete-cell { width: 64px; text-align: center; }
       .delete-row { padding: 4px 8px; border: 0; color: #a85c55; background: transparent; font-size: 12px; }
       .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; color: var(--muted); font-size: 12px; }
@@ -147,19 +147,22 @@
           { id: "gannosu", role: "destination", name: "雁の巣の海沿い", area: "海の中道", category: "sea", price: 0, minutes: 80, openHour: 7, closeHour: 19, actionLabel: "海を眺めて、ひと休み", diary: "海沿いを走る風が気持ちいいね。リュックも、なんだか軽くなったみたい。", image: "coast", accessStations: "st_gannosu,st_wajiro" }
         ],
         foods: [
-          { id: "ramen", name: "豚骨ラーメン", price: 800, slots: "lunch,dinner", preference: "foodie", diary: "スープをひと口。おいしくて、思わず耳がぴんとしたよ。福岡に来てよかった！", image: "ramen" },
-          { id: "goboten-udon", name: "ごぼう天うどん", price: 550, slots: "lunch,dinner", preference: "frugal", diary: "やわらかいうどんと、さくさくのごぼう天。お財布にやさしくて、おなかもぽかぽか。", image: "" },
-          { id: "motsunabe", name: "もつ鍋", price: 2100, slots: "dinner", preference: "foodie", diary: "今日はちょっとぜいたく。お鍋を囲むだけで、ひとり旅もあたたかくなるね。", image: "" },
-          { id: "mizutaki", name: "水炊き", price: 2400, slots: "dinner", preference: "foodie", diary: "白いスープに、おいしさがぎゅっと詰まっていたよ。最後まで、大事にいただきました。", image: "" },
-          { id: "mentai-onigiri", name: "明太子のおにぎり", price: 350, slots: "breakfast,lunch,dinner", preference: "frugal,rail", diary: "おにぎりを持って、ベンチでひと休み。ちょっとぴりっとするのが、好きなんだ。", image: "" },
-          { id: "yakitori", name: "焼き鳥", price: 1200, slots: "dinner", preference: "foodie", diary: "炭の香りに誘われて、つい寄り道。キャベツも一緒に、いただきます。", image: "" },
-          { id: "gomasaba", name: "ごまさば定食", price: 1600, slots: "lunch,dinner", preference: "foodie", diary: "ごまの香りと、新鮮なお魚。ごはんがどんどん進んじゃったよ。", image: "" },
-          { id: "egg-sand", name: "たまごサンド", price: 450, slots: "breakfast,lunch", preference: "cyclist", diary: "ふわふわのたまごサンドで、元気をチャージ。今日もいっぱい歩こう。", image: "" },
-          { id: "croissant", name: "クロワッサン", price: 500, slots: "breakfast", preference: "foodie", diary: "焼きたてのクロワッサンで朝ごはん。今日の地図を広げる、この時間が好き。", image: "" },
-          { id: "mentai-france", name: "明太フランス", price: 450, slots: "breakfast,lunch", preference: "foodie,frugal", diary: "明太子の塩気と香ばしいパン。ひと口で、旅の元気が出てきたよ。", image: "" },
-          { id: "omusubi", name: "おむすび朝ごはん", price: 350, slots: "breakfast", preference: "frugal", diary: "朝は小さなおむすびから。おこづかいを大事にしながら、今日も楽しむよ。", image: "" },
-          { id: "yaki-curry", name: "焼きカレー", price: 1100, slots: "lunch,dinner", preference: "rail", diary: "こんがりチーズの下に、あつあつのカレー。ふうふうしながら食べたよ。", image: "" },
-          { id: "kaisendon", name: "海鮮丼", price: 1800, slots: "lunch", preference: "foodie,cyclist", diary: "海鮮がぎゅっと詰まった丼。ひと口ごとに、うれしくなるね。小さなぜいたく、ありがとう。", image: "" }
+          { id: "ramen", name: "豚骨ラーメン", price: 800, weight: 1, openHour: 10, closeHour: 22, slots: "lunch,dinner", preference: "foodie", diary: "スープをひと口。おいしくて、思わず耳がぴんとしたよ。福岡に来てよかった！", image: "ramen" },
+          { id: "goboten-udon", name: "ごぼう天うどん", price: 550, weight: 1, openHour: 10, closeHour: 21, slots: "lunch,dinner", preference: "frugal", diary: "やわらかいうどんと、さくさくのごぼう天。お財布にやさしくて、おなかもぽかぽか。", image: "" },
+          { id: "motsunabe", name: "もつ鍋", price: 2100, weight: 1, openHour: 17, closeHour: 22, slots: "dinner", preference: "foodie", diary: "今日はちょっとぜいたく。お鍋を囲むだけで、ひとり旅もあたたかくなるね。", image: "" },
+          { id: "mizutaki", name: "水炊き", price: 2400, weight: 1, openHour: 17, closeHour: 22, slots: "dinner", preference: "foodie", diary: "白いスープに、おいしさがぎゅっと詰まっていたよ。最後まで、大事にいただきました。", image: "" },
+          { id: "mentai-onigiri", name: "明太子のおにぎり", price: 350, weight: 1, openHour: 7, closeHour: 21, slots: "breakfast,lunch,dinner", preference: "frugal,rail", diary: "おにぎりを持って、ベンチでひと休み。ちょっとぴりっとするのが、好きなんだ。", image: "" },
+          { id: "yakitori", name: "焼き鳥", price: 1200, weight: 1, openHour: 17, closeHour: 23, slots: "dinner", preference: "foodie", diary: "炭の香りに誘われて、つい寄り道。キャベツも一緒に、いただきます。", image: "" },
+          { id: "gomasaba", name: "ごまさば定食", price: 1600, weight: 1, openHour: 11, closeHour: 21, slots: "lunch,dinner", preference: "foodie", diary: "ごまの香りと、新鮮なお魚。ごはんがどんどん進んじゃったよ。", image: "" },
+          { id: "egg-sand", name: "たまごサンド", price: 450, weight: 1, openHour: 7, closeHour: 15, slots: "breakfast,lunch", preference: "cyclist", diary: "ふわふわのたまごサンドで、元気をチャージ。今日もいっぱい歩こう。", image: "" },
+          { id: "croissant", name: "クロワッサン", price: 500, weight: 1, openHour: 7, closeHour: 11, slots: "breakfast", preference: "foodie", diary: "焼きたてのクロワッサンで朝ごはん。今日の地図を広げる、この時間が好き。", image: "" },
+          { id: "mentai-france", name: "明太フランス", price: 450, weight: 1, openHour: 7, closeHour: 18, slots: "breakfast,lunch", preference: "foodie,frugal", diary: "明太子の塩気と香ばしいパン。ひと口で、旅の元気が出てきたよ。", image: "" },
+          { id: "omusubi", name: "おむすび朝ごはん", price: 350, weight: 1, openHour: 7, closeHour: 11, slots: "breakfast", preference: "frugal", diary: "朝は小さなおむすびから。おこづかいを大事にしながら、今日も楽しむよ。", image: "" },
+          { id: "yaki-curry", name: "焼きカレー", price: 1100, weight: 1, openHour: 11, closeHour: 21, slots: "lunch,dinner", preference: "rail", diary: "こんがりチーズの下に、あつあつのカレー。ふうふうしながら食べたよ。", image: "" },
+          { id: "kaisendon", name: "海鮮丼", price: 1800, weight: 1, openHour: 11, closeHour: 15, slots: "lunch", preference: "foodie,cyclist", diary: "海鮮がぎゅっと詰まった丼。ひと口ごとに、うれしくなるね。小さなぜいたく、ありがとう。", image: "" },
+          { id: "convenience-bento", name: "コンビニ弁当", price: 500, weight: 0.35, openHour: 0, closeHour: 24, slots: "breakfast,lunch,dinner", preference: "frugal,rail", diary: "今日は気軽にコンビニ弁当。買ったらすぐ食べられるのも、旅の味方だね。", image: "" },
+          { id: "gyudon", name: "牛丼", price: 650, weight: 0.35, openHour: 5, closeHour: 24, slots: "lunch,dinner", preference: "frugal", diary: "あつあつの牛丼を、ぱぱっといただきます。おなかいっぱい、もうひと歩きできそう。", image: "" },
+          { id: "hamburger", name: "ハンバーガー", price: 700, weight: 0.3, openHour: 7, closeHour: 24, slots: "breakfast,lunch,dinner", preference: "", diary: "ハンバーガーを片手にひと休み。いつもの味があると、旅先でもほっとするね。", image: "" }
         ],
         hotels: [
           { id: "small-inn", name: "まちの小さな宿", price: 3900 },
@@ -170,7 +173,8 @@
         ]
       };
 
-      const storageKey = "komugi-trip-content-v3";
+      const storageKey = "komugi-trip-content-v4";
+      const legacyStorageKey = "komugi-trip-content-v3";
       const definitions = {
         places: {
           title: "観光地・出発地点",
@@ -184,9 +188,9 @@
         },
         foods: {
           title: "食事",
-          note: "slots は breakfast / lunch / dinner、preference は foodie / frugal / rail / cyclist をカンマ区切りで記入します。",
-          fields: [["id", "ID"], ["name", "料理名"], ["price", "価格"], ["slots", "時間帯"], ["preference", "好み補正"], ["diary", "たより本文"], ["image", "画像ID"]],
-          blank: { id: "new-food", name: "新しい料理", price: 500, slots: "lunch", preference: "foodie", diary: "おいしくいただきました。", image: "" }
+          note: "weight は基本選択重み（ご当地料理=1、日常食は低め）。openHour / closeHour は日本時間です。slots は breakfast / lunch / dinner、preference は foodie / frugal / rail / cyclist をカンマ区切りで記入します。",
+          fields: [["id", "ID"], ["name", "料理名"], ["price", "価格"], ["weight", "重み"], ["openHour", "開店"], ["closeHour", "閉店"], ["slots", "時間帯"], ["preference", "好み補正"], ["diary", "たより本文"], ["image", "画像ID"]],
+          blank: { id: "new-food", name: "新しい料理", price: 500, weight: 1, openHour: 7, closeHour: 20, slots: "lunch", preference: "foodie", diary: "おいしくいただきました。", image: "" }
         },
         hotels: {
           title: "宿泊",
@@ -199,14 +203,37 @@
       let state = load();
       const tables = document.querySelector("#tables");
       const notice = document.querySelector("#notice");
-      const numberFields = new Set(["price", "minutes", "openHour", "closeHour"]);
+      const numberFields = new Set(["price", "weight", "minutes", "openHour", "closeHour"]);
       const esc = (value) => String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
 
+      function validState(value) {
+        return value && Array.isArray(value.places) && Array.isArray(value.foods) && Array.isArray(value.hotels);
+      }
+      function normalizeState(value) {
+        const defaults = new Map(seed.foods.map((food) => [food.id, food]));
+        return {
+          ...value,
+          schemaVersion: 1,
+          foods: value.foods.map((food) => {
+            const fallback = defaults.get(food.id) || {};
+            const number = (candidate, defaultValue) => Number.isFinite(Number(candidate)) ? Number(candidate) : defaultValue;
+            return {
+              ...fallback,
+              ...food,
+              weight: number(food.weight, fallback.weight ?? 1),
+              openHour: number(food.openHour, fallback.openHour ?? 7),
+              closeHour: number(food.closeHour, fallback.closeHour ?? 20)
+            };
+          })
+        };
+      }
       function load() {
-        try {
-          const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
-          if (saved && Array.isArray(saved.places) && Array.isArray(saved.foods) && Array.isArray(saved.hotels)) return saved;
-        } catch {}
+        for (const key of [storageKey, legacyStorageKey]) {
+          try {
+            const saved = JSON.parse(localStorage.getItem(key) || "null");
+            if (validState(saved)) return normalizeState(saved);
+          } catch {}
+        }
         return structuredClone(seed);
       }
       function setNotice(message) { notice.innerHTML = `<strong>状態</strong> ${esc(message)}`; }
