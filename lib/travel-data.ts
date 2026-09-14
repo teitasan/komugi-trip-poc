@@ -859,9 +859,10 @@ export const foods: Food[] = [
   },
 ];
 export const hotels = [
-  { name: "まちの小さな宿", price: 3900 },
+  { name: "ネットカフェ", price: 2500 },
   { name: "駅前のシンプルな宿", price: 4500 },
   { name: "静かな通りのホテル", price: 5400 },
   { name: "ゆったりした街のホテル", price: 6500 },
   { name: "窓辺のあるホテル", price: 7200 },
+  { name: "野宿", price: 0 },
 ];

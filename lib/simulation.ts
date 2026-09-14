@@ -220,6 +220,12 @@ function record(
   };
   t.entries.push(entry);
 }
+function minimumPaidHotelCost() {
+  const prices = hotels
+    .filter((hotel) => hotel.price > 0)
+    .map((hotel) => hotel.price);
+  return prices.length ? Math.min(...prices) : 0;
+}
 export function reserve(t: Trip, at: number, place = t.placeId) {
   let amount = routeCost(getRoute(place, "hakata", t.personality));
   for (let date = jstStart(at); date < t.deadline; date += DAY) {
@@ -228,7 +234,7 @@ export function reserve(t: Trip, at: number, place = t.placeId) {
         key = dateKey(date);
       if (when < at || when >= t.deadline) continue;
       if (hour === 23) {
-        if (!t.nights.includes(key)) amount += 3900;
+        if (!t.nights.includes(key)) amount += minimumPaidHotelCost();
       } else {
         const slot =
           hour === 8 ? "breakfast" : hour === 12 ? "lunch" : "dinner";
@@ -422,19 +428,26 @@ function decide(t: Trip, at: number) {
   }
   if ((hour >= 23 || hour < 7) && !t.nights.includes(nightKey)) {
     t.nights.push(nightKey);
-    let choices = hotels.filter((h) => h.price <= t.balance - reserve(t, at));
-    if (!choices.length) choices = [hotels[0]];
+    const available = t.balance - reserve(t, at);
+    const paidChoices = hotels.filter(
+      (hotel) => hotel.price > 0 && hotel.price <= available,
+    );
+    const camping = hotels.find((hotel) => hotel.price === 0) ?? hotels[0];
+    const choices = paidChoices.length ? paidChoices : [camping];
     const hotel =
       t.personality === "frugal"
         ? choices[0]
         : choices[Math.floor(random(t) * Math.min(choices.length, 3))];
-    // A minimum room is always kept in the reserve; fail before overspending if state is invalid.
+    // Keep the cheapest paid lodging in reserve; switch to the zero-cost fallback when needed.
+    const campingText = hotel.price === 0;
     record(
       t,
       at,
       "stay",
-      `${hotel.name}で、おやすみ。`,
-      "今日もたくさん歩いたなあ。リュックを置いて、ふかふかのお布団へ。明日はどこへ行こうかな。",
+      campingText ? "野宿で、おやすみ。" : `${hotel.name}で、おやすみ。`,
+      campingText
+        ? "宿代を残せなかったので、静かで安全な場所を探して休むことにしたよ。明日は少し節約しよう。"
+        : "今日もたくさん歩いたなあ。リュックを置いて、ふかふかのお布団へ。明日はどこへ行こうかな。",
       hotel.price,
     );
     let wake = jstStart(at) + 7.5 * HOUR;

@@ -120,7 +120,7 @@
       <div class="notice" id="notice" role="status"><strong>使い方</strong> セルを編集し、「このブラウザに保存」または「JSONを書き出す」を押してください。</div>
       <div id="tables"></div>
       <footer>
-        schemaVersion: 1 · <code>openHour / closeHour</code> は日本時間。<code>accessStations</code> は路線グラフの駅IDをカンマ区切りで記入します。
+        schemaVersion: 1 · <code>openHour / closeHour</code> は日本時間。宿泊費を <code>0</code> にした行は、予算不足時の野宿候補になります。<code>accessStations</code> は路線グラフの駅IDをカンマ区切りで記入します。
       </footer>
     </main>
     <script>
@@ -165,16 +165,17 @@
           { id: "hamburger", name: "ハンバーガー", price: 700, weight: 0.3, openHour: 7, closeHour: 24, slots: "breakfast,lunch,dinner", preference: "", diary: "ハンバーガーを片手にひと休み。いつもの味があると、旅先でもほっとするね。", image: "" }
         ],
         hotels: [
-          { id: "small-inn", name: "まちの小さな宿", price: 3900 },
+          { id: "net-cafe", name: "ネットカフェ", price: 2500 },
           { id: "station-simple", name: "駅前のシンプルな宿", price: 4500 },
           { id: "quiet-hotel", name: "静かな通りのホテル", price: 5400 },
           { id: "relaxed-hotel", name: "ゆったりした街のホテル", price: 6500 },
-          { id: "window-hotel", name: "窓辺のあるホテル", price: 7200 }
+          { id: "window-hotel", name: "窓辺のあるホテル", price: 7200 },
+          { id: "wild-camp", name: "野宿", price: 0 }
         ]
       };
 
-      const storageKey = "komugi-trip-content-v4";
-      const legacyStorageKey = "komugi-trip-content-v3";
+      const storageKey = "komugi-trip-content-v5";
+      const legacyStorageKeys = ["komugi-trip-content-v4", "komugi-trip-content-v3"];
       const definitions = {
         places: {
           title: "観光地・出発地点",
@@ -194,7 +195,7 @@
         },
         hotels: {
           title: "宿泊",
-          note: "宿泊費は1泊分です。",
+          note: "宿泊費は1泊分です。野宿は0円の最終手段として、他の宿が予算内にない場合だけ選ばれます。",
           fields: [["id", "ID"], ["name", "宿名"], ["price", "1泊料金"]],
           blank: { id: "new-hotel", name: "新しい宿", price: 5000 }
         }
@@ -209,8 +210,10 @@
       function validState(value) {
         return value && Array.isArray(value.places) && Array.isArray(value.foods) && Array.isArray(value.hotels);
       }
-      function normalizeState(value) {
+      function normalizeState(value, sourceKey) {
         const defaults = new Map(seed.foods.map((food) => [food.id, food]));
+        const hotelDefaults = new Map(seed.hotels.map((hotel) => [hotel.id, hotel]));
+        const legacy = sourceKey !== storageKey;
         return {
           ...value,
           schemaVersion: 1,
@@ -224,14 +227,24 @@
               openHour: number(food.openHour, fallback.openHour ?? 7),
               closeHour: number(food.closeHour, fallback.closeHour ?? 20)
             };
-          })
+          }),
+          hotels: value.hotels
+            .map((hotel) => {
+              const renamed = legacy && hotel.id === "small-inn";
+              return {
+                ...(hotelDefaults.get(renamed ? "net-cafe" : hotel.id) || {}),
+                ...hotel,
+                ...(renamed ? { id: "net-cafe", name: "ネットカフェ", price: 2500 } : {})
+              };
+            })
+            .concat(legacy && !value.hotels.some((hotel) => hotel.id === "wild-camp") ? [hotelDefaults.get("wild-camp")] : [])
         };
       }
       function load() {
-        for (const key of [storageKey, legacyStorageKey]) {
+        for (const key of [storageKey, ...legacyStorageKeys]) {
           try {
             const saved = JSON.parse(localStorage.getItem(key) || "null");
-            if (validState(saved)) return normalizeState(saved);
+            if (validState(saved)) return normalizeState(saved, key);
           } catch {}
         }
         return structuredClone(seed);

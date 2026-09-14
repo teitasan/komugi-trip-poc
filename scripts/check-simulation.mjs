@@ -123,6 +123,13 @@ assert(
   ),
   `late arrival selected an unavailable local meal: ${lateFood.title}`,
 );
+const campingTrip = createTrip("camping-fallback", 3, 7000, "foodie", lateStart, 1);
+campingTrip.balance = 1000;
+advance(campingTrip, lateStart + 5 * 60000);
+assert(
+  campingTrip.entries.some((entry) => entry.title === "野宿で、おやすみ。"),
+  "budget-free stay did not use the camping fallback",
+);
 console.log(
-  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, walk/train route data, and late-night chain fallback passed.`,
+  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, walk/train route data, late-night chain fallback, and camping fallback passed.`,
 );
