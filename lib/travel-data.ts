@@ -45,16 +45,28 @@ export const places: Place[] = [
     diary: "リュックを背負ったら、なんだか少し勇気が出たよ。いってきます！",
   },
   {
-    id: "canal",
-    name: "博多の運河沿い",
+    id: "hakata-temple",
+    name: "博多のお寺",
     area: "博多",
-    point: [33.5898, 130.4108],
+    point: [33.5967, 130.4164],
+    category: "shrine",
+    price: 0,
+    minutes: 60,
+    openHour: 8,
+    closeHour: 18,
+    diary: "大きなお堂の前で、静かな時間。旅の安全をお願いしてきたよ。",
+  },
+  {
+    id: "hakata-mall",
+    name: "博多のショッピングモール",
+    area: "博多",
+    point: [33.5894, 130.4101],
     category: "city",
     price: 0,
-    minutes: 50,
-    openHour: 7,
-    closeHour: 20,
-    diary: "水辺のベンチで、ひと休み。行き交う人を眺めるのも、旅の楽しみだね。",
+    minutes: 100,
+    openHour: 10,
+    closeHour: 21,
+    diary: "お店をいろいろ見て回ったよ。知らないものが並んでいると、つい長居しちゃうね。",
   },
   {
     id: "nakasu",
@@ -137,7 +149,7 @@ export const places: Place[] = [
   },
   {
     id: "tower",
-    name: "百道の展望スポット",
+    name: "百道の展望タワー",
     area: "百道",
     point: [33.5933, 130.3515],
     category: "city",
@@ -146,7 +158,20 @@ export const places: Place[] = [
     openHour: 9,
     closeHour: 20,
     diary:
-      "高いところから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。",
+      "展望タワーから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。",
+  },
+  {
+    id: "dome",
+    name: "百道のドーム",
+    area: "百道",
+    point: [33.5954, 130.3623],
+    category: "city",
+    price: 1200,
+    minutes: 100,
+    openHour: 10,
+    closeHour: 20,
+    diary:
+      "大きなドームを見上げたよ。中から聞こえる歓声に、こむぎもわくわくしたな。",
   },
   {
     id: "meinohama",
@@ -241,8 +266,26 @@ export const places: Place[] = [
     image: "coast",
   },
 ];
+/**
+ * 旧POCで保存された旅の記録を表示・継続するための互換地点。
+ * 新しい旅の抽選対象には含めない。
+ */
+const legacyPlaces: Place[] = [
+  {
+    id: "canal",
+    name: "博多の運河沿い",
+    area: "博多",
+    point: [33.5898, 130.4108],
+    category: "city",
+    price: 0,
+    minutes: 50,
+    openHour: 7,
+    closeHour: 20,
+    diary: "水辺のベンチで、ひと休み。行き交う人を眺めるのも、旅の楽しみだね。",
+  },
+];
 export const placeById = Object.fromEntries(
-  places.map((p) => [p.id, p]),
+  [...places, ...legacyPlaces].map((p) => [p.id, p]),
 ) as Record<string, Place>;
 /**
  * 福岡市内と近郊で使う鉄道ネットワーク。
@@ -470,6 +513,16 @@ export const railLineById = Object.fromEntries(
 export type PlaceStationAccess = { stationId: string; minutes: number };
 export const placeStationAccess: Record<string, PlaceStationAccess[]> = {
   hakata: [{ stationId: "st_hakata", minutes: 3 }],
+  "hakata-temple": [
+    { stationId: "st_gion", minutes: 4 },
+    { stationId: "st_hakata", minutes: 10 },
+  ],
+  "hakata-mall": [
+    { stationId: "st_kushida", minutes: 5 },
+    { stationId: "st_nakasu", minutes: 8 },
+    { stationId: "st_gion", minutes: 9 },
+  ],
+  // Legacy access kept only for trips created before the destination was removed.
   canal: [
     { stationId: "st_nakasu", minutes: 7 },
     { stationId: "st_gion", minutes: 8 },
@@ -503,6 +556,10 @@ export const placeStationAccess: Record<string, PlaceStationAccess[]> = {
     { stationId: "st_nishijin", minutes: 20 },
     { stationId: "st_fujisaki", minutes: 20 },
   ],
+  dome: [
+    { stationId: "st_tojinmachi", minutes: 12 },
+    { stationId: "st_nishijin", minutes: 18 },
+  ],
   meinohama: [{ stationId: "st_meinohama", minutes: 5 }],
   itoshima: [{ stationId: "st_maebaru", minutes: 5 }],
   futami: [{ stationId: "st_kafuri", minutes: 28 }],
@@ -522,11 +579,15 @@ function walkEdge(a: string, b: string, ...middle: Point[]): Edge {
   return { a, b, mode: "walk", points: [placeById[a].point, ...middle, placeById[b].point] };
 }
 const localWalkEdges: Edge[] = [
+  walkEdge("hakata", "hakata-temple", [33.592, 130.418]),
+  walkEdge("hakata-temple", "hakata-mall", [33.594, 130.413]),
+  // Legacy links keep old saved trips routable, but canal is not in places.
   walkEdge("hakata", "canal", [33.5887, 130.4171], [33.5888, 130.4114]),
   walkEdge("canal", "nakasu", [33.5915, 130.4094]),
   walkEdge("ohori", "maizuru", [33.5846, 130.3787]),
   walkEdge("nishijin", "momochi", [33.5854, 130.3549], [33.5908, 130.3517]),
   walkEdge("momochi", "tower"),
+  walkEdge("tower", "dome", [33.594, 130.357]),
   walkEdge("itoshima", "futami", [33.5621, 130.2078], [33.5724, 130.2192], [33.5911, 130.2185], [33.6102, 130.2062], [33.6271, 130.2055]),
 ];
 const accessEdges: Edge[] = Object.entries(placeStationAccess).flatMap(

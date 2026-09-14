@@ -128,14 +128,16 @@
         schemaVersion: 1,
         places: [
           { id: "hakata", role: "start", name: "博多駅", area: "博多", category: "city", price: 0, minutes: 30, openHour: 7, closeHour: 20, actionLabel: "博多駅で、旅じたく", diary: "リュックを背負ったら、なんだか少し勇気が出たよ。いってきます！", image: "", accessStations: "st_hakata" },
-          { id: "canal", role: "destination", name: "博多の運河沿い", area: "博多", category: "city", price: 0, minutes: 50, openHour: 7, closeHour: 20, actionLabel: "博多の運河沿いをおさんぽ", diary: "水辺のベンチで、ひと休み。行き交う人を眺めるのも、旅の楽しみだね。", image: "", accessStations: "st_nakasu,st_gion" },
+          { id: "hakata-temple", role: "destination", name: "博多のお寺", area: "博多", category: "shrine", price: 0, minutes: 60, openHour: 8, closeHour: 18, actionLabel: "博多のお寺をおさんぽ", diary: "大きなお堂の前で、静かな時間。旅の安全をお願いしてきたよ。", image: "", accessStations: "st_gion,st_hakata" },
+          { id: "hakata-mall", role: "destination", name: "博多のショッピングモール", area: "博多", category: "city", price: 0, minutes: 100, openHour: 10, closeHour: 21, actionLabel: "博多のショッピングモールをおさんぽ", diary: "お店をいろいろ見て回ったよ。知らないものが並んでいると、つい長居しちゃうね。", image: "", accessStations: "st_kushida,st_nakasu,st_gion" },
           { id: "nakasu", role: "destination", name: "中洲の川沿い", area: "中洲", category: "city", price: 0, minutes: 70, openHour: 7, closeHour: 20, actionLabel: "中洲の川沿いをおさんぽ", diary: "川面がきらきらしていたよ。屋台から、おいしそうな匂い。おなかが鳴っちゃった。", image: "", accessStations: "st_nakasu,st_gion" },
           { id: "tenjin", role: "destination", name: "天神のまち歩き", area: "天神", category: "city", price: 0, minutes: 60, openHour: 7, closeHour: 20, actionLabel: "天神のまち歩きをおさんぽ", diary: "にぎやかな道を、てくてく。小さな路地を見つけると、つい曲がりたくなるんだ。", image: "", accessStations: "st_tenjin,st_tenjin_minami,st_nt_tenjin" },
           { id: "ohori", role: "destination", name: "大濠公園", area: "大濠", category: "park", price: 0, minutes: 90, openHour: 7, closeHour: 19, actionLabel: "大濠公園をおさんぽ", diary: "池のまわりを一周したよ。水鳥を数えていたら、いつのまにか時間がたっていた。", image: "", accessStations: "st_ohori,st_tojinmachi" },
           { id: "maizuru", role: "destination", name: "舞鶴公園", area: "大濠", category: "park", price: 0, minutes: 75, openHour: 7, closeHour: 19, actionLabel: "舞鶴公園をおさんぽ", diary: "石垣の上から、福岡の街が見えたよ。ずっと昔にも、ここを旅した誰かがいたのかな。", image: "", accessStations: "st_akasaka,st_ohori" },
           { id: "nishijin", role: "destination", name: "西新の商店街", area: "西新", category: "city", price: 0, minutes: 70, openHour: 7, closeHour: 20, actionLabel: "西新の商店街をおさんぽ", diary: "商店街を歩いていたら、すっかりこの街の気分。小さな寄り道がいちばん好きかも。", image: "", accessStations: "st_nishijin,st_fujisaki" },
           { id: "momochi", role: "destination", name: "百道の海辺", area: "百道", category: "sea", price: 0, minutes: 100, openHour: 7, closeHour: 19, actionLabel: "海を眺めて、ひと休み", diary: "はじめて見る、福岡の海！靴に砂が入ったけど、なんだかそれもうれしいな。", image: "coast", accessStations: "st_nishijin,st_tojinmachi" },
-          { id: "tower", role: "destination", name: "百道の展望スポット", area: "百道", category: "city", price: 800, minutes: 75, openHour: 9, closeHour: 20, actionLabel: "百道の展望スポットをおさんぽ", diary: "高いところから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。", image: "", accessStations: "st_nishijin,st_fujisaki" },
+          { id: "tower", role: "destination", name: "百道の展望タワー", area: "百道", category: "city", price: 800, minutes: 75, openHour: 9, closeHour: 20, actionLabel: "百道の展望タワーをおさんぽ", diary: "展望タワーから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。", image: "", accessStations: "st_nishijin,st_fujisaki" },
+          { id: "dome", role: "destination", name: "百道のドーム", area: "百道", category: "city", price: 1200, minutes: 100, openHour: 10, closeHour: 20, actionLabel: "百道のドームをおさんぽ", diary: "大きなドームを見上げたよ。中から聞こえる歓声に、こむぎもわくわくしたな。", image: "", accessStations: "st_tojinmachi,st_nishijin" },
           { id: "meinohama", role: "destination", name: "姪浜の港町", area: "姪浜", category: "city", price: 0, minutes: 60, openHour: 7, closeHour: 20, actionLabel: "姪浜の港町をおさんぽ", diary: "港のほうから潮の香り。海のある暮らしって、どんな感じなんだろう。", image: "", accessStations: "st_meinohama" },
           { id: "itoshima", role: "destination", name: "糸島の小さなまち", area: "糸島", category: "city", price: 0, minutes: 80, openHour: 7, closeHour: 20, actionLabel: "糸島の小さなまちをおさんぽ", diary: "列車を降りたら、空が広くなった気がしたよ。海へ続く道を探してみよう。", image: "", accessStations: "st_maebaru" },
           { id: "futami", role: "destination", name: "糸島の海岸", area: "糸島", category: "sea", price: 0, minutes: 120, openHour: 7, closeHour: 19, actionLabel: "海を眺めて、ひと休み", diary: "青い海が、どこまでも続いていたよ。波の音を聞いていたら、帰りたくなくなっちゃった。", image: "coast", accessStations: "st_kafuri" },
@@ -167,7 +169,7 @@
         ]
       };
 
-      const storageKey = "komugi-trip-content-v1";
+      const storageKey = "komugi-trip-content-v2";
       const definitions = {
         places: {
           title: "観光地・出発地点",

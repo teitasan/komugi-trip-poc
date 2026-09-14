@@ -57,6 +57,10 @@ for (const days of [3, 7])
             t.balance,
             days * budget - t.entries.reduce((s, e) => s + e.amount, 0),
           );
+          assert(
+            t.entries.every((e) => e.placeId !== "canal"),
+            "removed canal destination was selected",
+          );
           assert.equal(
             new Set(t.entries.map((e) => e.id)).size,
             t.entries.length,
@@ -93,6 +97,9 @@ const p = currentPosition(t, start + HOUR);
 assert(p.every(Number.isFinite));
 for (const [from, to] of [
   ["hakata", "nishijin"],
+  ["hakata", "hakata-temple"],
+  ["hakata", "hakata-mall"],
+  ["hakata", "dome"],
   ["hakata", "itoshima"],
   ["hakata", "dazaifu"],
   ["hakata", "uminaka"],
