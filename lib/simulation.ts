@@ -5,8 +5,11 @@ import {
   foods,
   hotels,
   modeNames,
+  railFare,
+  railLineById,
   type Point,
   type Mode,
+  type StoredMode,
   type Personality,
 } from "./travel-data";
 export const HOUR = 3600000,
@@ -32,10 +35,11 @@ export type Entry = {
 };
 export type Leg = {
   points: Point[];
-  mode: Mode;
+  mode: StoredMode;
   minutes: number;
   cost: number;
   km: number;
+  lineId?: string;
 };
 export type Activity = {
   kind: "welcome" | "move" | "visit" | "meal" | "sleep" | "rest" | "complete";
@@ -84,12 +88,16 @@ function random(t: Trip) {
   t.rng = (Math.imul(t.rng, 1664525) + 1013904223) >>> 0;
   return t.rng / 4294967296;
 }
+const routeCache = new Map<string, Leg[]>();
 export function getRoute(
   from: string,
   to: string,
   preference: Personality,
 ): Leg[] {
   if (from === to) return [];
+  const cacheKey = `${from}:${to}:${preference}`,
+    cached = routeCache.get(cacheKey);
+  if (cached) return cached;
   const dist: Record<string, number> = { [from]: 0 },
     previous: Record<string, { id: string; leg: Leg }> = {},
     seen = new Set<string>();
@@ -103,25 +111,15 @@ export function getRoute(
       if (e.a !== node && e.b !== node) continue;
       const next = e.a === node ? e.b : e.a,
         points = e.a === node ? e.points : [...e.points].reverse(),
-        km = pathLength(points);
-      let mode: Mode = "walk";
-      if (preference === "cyclist" && km > 1 && km < 20) mode = "bicycle";
-      else if (e.rail && km > 1.1) mode = "train";
-      else if (km > 5) mode = "bicycle";
-      const cost =
-        mode === "walk"
-          ? 0
-          : mode === "bicycle"
-            ? Math.ceil(km / 5) * 150
-            : Math.ceil((170 + km * 22) / 10) * 10;
-      const minutes =
-        mode === "walk"
-          ? (km / 4) * 60
-          : mode === "bicycle"
-            ? (km / 13) * 60 + 5
-            : (km / 32) * 60 + 9;
-      const weight = minutes + (preference === "frugal" ? cost / 12 : 0);
-      const leg = { points, mode, cost, minutes, km };
+        km = pathLength(points),
+        mode: Mode = e.mode,
+        cost = e.cost ?? (mode === "walk" ? 0 : Math.ceil((170 + km * 22) / 10) * 10),
+        minutes = e.minutes ?? (mode === "walk" ? (km / 4) * 60 : (km / 32) * 60 + 9),
+        weight =
+          minutes +
+          (preference === "frugal" ? cost / 12 : 0) -
+          (preference === "rail" && mode === "train" ? 3 : 0);
+      const leg = { points, mode, cost, minutes, km, lineId: e.lineId };
       if (dist[next] === undefined || dist[node] + weight < dist[next]) {
         dist[next] = dist[node] + weight;
         previous[next] = { id: node, leg };
@@ -132,9 +130,32 @@ export function getRoute(
   const result: Leg[] = [];
   for (let node = to; node !== from; node = previous[node].id)
     result.unshift(previous[node].leg);
+  routeCache.set(cacheKey, result);
   return result;
 }
-export const routeCost = (legs: Leg[]) => legs.reduce((a, b) => a + b.cost, 0);
+export function routeCost(legs: Leg[]) {
+  let total = 0,
+    operator: "subway" | "jr" | "nishitetsu" | null = null,
+    trainKm = 0;
+  const flushTrain = () => {
+    if (operator) total += railFare(trainKm, operator);
+    operator = null;
+    trainKm = 0;
+  };
+  for (const leg of legs) {
+    const line = leg.lineId ? railLineById[leg.lineId] : undefined;
+    if (leg.mode === "train" && line) {
+      if (operator && operator !== line.operator) flushTrain();
+      operator = line.operator;
+      trainKm += leg.km;
+    } else {
+      flushTrain();
+      total += leg.cost;
+    }
+  }
+  flushTrain();
+  return total;
+}
 export const routeMinutes = (legs: Leg[]) =>
   legs.reduce((a, b) => a + b.minutes, 0);
 export function jstStart(ms: number) {
@@ -231,6 +252,7 @@ function beginMove(t: Trip, to: string, at: number, returning = false) {
     return;
   }
   const cost = routeCost(legs),
+    minutes = Math.ceil(routeMinutes(legs)),
     modes = [...new Set(legs.map((l) => modeNames[l.mode]))].join("・");
   record(
     t,
@@ -240,8 +262,8 @@ function beginMove(t: Trip, to: string, at: number, returning = false) {
       ? "思い出を連れて、博多へ。"
       : `${placeById[to].area}へ行ってみるね。`,
     returning
-      ? "帰りのお金は、ちゃんと残しておいたよ。リュックを背負って、最後の移動。"
-      : `${modes}で${placeById[to].name}へ。${t.personality === "frugal" ? "おこづかいを大事にしながら、寄り道を楽しむよ。" : t.personality === "rail" ? "車窓の景色も楽しみなんだ。" : t.personality === "cyclist" ? "風を感じる道があると、うれしくなるね。" : "向こうには、どんな景色が待っているかな。"}`,
+      ? `所要約${minutes}分・運賃${cost}円。帰りのお金は、ちゃんと残しておいたよ。リュックを背負って、最後の移動。`
+      : `${modes}で${placeById[to].name}へ（所要約${minutes}分・運賃${cost}円）。${t.personality === "frugal" ? "おこづかいを大事にしながら、寄り道を楽しむよ。" : t.personality === "rail" ? "車窓の景色も楽しみなんだ。" : t.personality === "cyclist" ? "海辺の道があると、うれしくなるね。" : "向こうには、どんな景色が待っているかな。"}`,
     cost,
   );
   t.activity = {

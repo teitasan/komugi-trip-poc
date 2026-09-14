@@ -16,6 +16,9 @@ const {
   advance,
   fund,
   currentPosition,
+  getRoute,
+  routeCost,
+  routeMinutes,
   HOUR,
   DAY,
 } = require("../.sites-runtime/simulation.cjs");
@@ -88,6 +91,20 @@ assert.equal(t.totalBudget, 33000);
 advance(t, start + HOUR);
 const p = currentPosition(t, start + HOUR);
 assert(p.every(Number.isFinite));
+for (const [from, to] of [
+  ["hakata", "nishijin"],
+  ["hakata", "itoshima"],
+  ["hakata", "dazaifu"],
+  ["hakata", "uminaka"],
+  ["futami", "hakata"],
+]) {
+  const route = getRoute(from, to, "foodie");
+  assert(route.length > 0, `route missing ${from}/${to}`);
+  assert(route.every((leg) => leg.mode === "walk" || leg.mode === "train"));
+  assert(route.every((leg) => leg.minutes > 0 && leg.cost >= 0));
+  assert(routeMinutes(route) > 0);
+  assert(routeCost(route) >= 0);
+}
 console.log(
-  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship & position passed.`,
+  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, and walk/train route data passed.`,
 );

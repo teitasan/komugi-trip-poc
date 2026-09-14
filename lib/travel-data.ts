@@ -1,16 +1,20 @@
 // Curated POC data. Coordinates are real-world locations; prices and paths are simulation estimates.
 export type Point = [number, number];
 export type Personality = "foodie" | "frugal" | "rail" | "cyclist";
-export type Mode = "walk" | "train" | "bicycle";
+// New trips use only walking and trains. "bicycle" remains readable for old
+// saved trips created before the POC transport scope was narrowed.
+export type Mode = "walk" | "train";
+export type StoredMode = Mode | "bicycle";
 export const personalities: Record<Personality, string> = {
   foodie: "食いしん坊",
   frugal: "節約家",
   rail: "鉄道好き",
-  cyclist: "自転車好き",
+  cyclist: "海辺好き",
 };
-export const modeNames: Record<Mode, string> = {
+export const modeNames: Record<StoredMode, string> = {
   walk: "徒歩",
   train: "電車",
+  // Kept so trips persisted by the first POC still render correctly.
   bicycle: "自転車",
 };
 export type Place = {
@@ -205,99 +209,340 @@ export const places: Place[] = [
 export const placeById = Object.fromEntries(
   places.map((p) => [p.id, p]),
 ) as Record<string, Place>;
-export type Edge = { a: string; b: string; rail: boolean; points: Point[] };
-function edge(a: string, b: string, rail: boolean, ...middle: Point[]): Edge {
-  return {
-    a,
-    b,
-    rail,
-    points: [placeById[a].point, ...middle, placeById[b].point],
-  };
+/**
+ * 福岡市内と近郊で使う鉄道ネットワーク。
+ *
+ * 駅の並びをデータとして持ち、隣駅だけでなく同一路線上の駅同士を
+ * 直接結んだエッジを生成する。これで乗車中の運賃を駅ごとに二重計上
+ * せず、路線距離から運賃と所要時間を算出できる。
+ */
+export type RailStation = { id: string; name: string; point: Point };
+export type RailOperator = "subway" | "jr" | "nishitetsu";
+export type RailLine = {
+  id: string;
+  name: string;
+  operator: RailOperator;
+  speedKmh: number;
+  stopMinutes: number;
+  stationIds: string[];
+};
+export type Edge = {
+  a: string;
+  b: string;
+  mode: Mode;
+  points: Point[];
+  minutes?: number;
+  cost?: number;
+  lineId?: string;
+};
+
+export const railStations: RailStation[] = [
+  // 福岡市地下鉄 空港線
+  { id: "st_meinohama", name: "姪浜駅", point: placeById.meinohama.point },
+  { id: "st_muromi", name: "室見駅", point: [33.5746, 130.3489] },
+  { id: "st_fujisaki", name: "藤崎駅", point: [33.5818, 130.3488] },
+  { id: "st_nishijin", name: "西新駅", point: placeById.nishijin.point },
+  { id: "st_tojinmachi", name: "唐人町駅", point: [33.5903, 130.3705] },
+  { id: "st_ohori", name: "大濠公園駅", point: placeById.ohori.point },
+  { id: "st_akasaka", name: "赤坂駅", point: [33.5899, 130.392] },
+  { id: "st_tenjin", name: "天神駅", point: placeById.tenjin.point },
+  { id: "st_nakasu", name: "中洲川端駅", point: placeById.nakasu.point },
+  { id: "st_gion", name: "祇園駅", point: [33.5953, 130.4136] },
+  { id: "st_hakata", name: "博多駅", point: placeById.hakata.point },
+  { id: "st_higashihie", name: "東比恵駅", point: [33.5909, 130.4309] },
+  { id: "st_airport", name: "福岡空港駅", point: [33.5859, 130.4442] },
+  // 福岡市地下鉄 箱崎線
+  { id: "st_gofukumachi", name: "呉服町駅", point: [33.5962, 130.407] },
+  { id: "st_chiyo", name: "千代県庁口駅", point: [33.602, 130.407] },
+  { id: "st_maidashi", name: "馬出九大病院前駅", point: [33.611, 130.414] },
+  { id: "st_hakozaki_miyamae", name: "箱崎宮前駅", point: [33.62, 130.422] },
+  { id: "st_hakozaki_kyudai", name: "箱崎九大前駅", point: [33.624, 130.424] },
+  { id: "st_kaizuka", name: "貝塚駅", point: [33.65, 130.425] },
+  // 福岡市地下鉄 七隈線
+  { id: "st_hashimoto", name: "橋本駅", point: [33.565, 130.319] },
+  { id: "st_jiromaru", name: "次郎丸駅", point: [33.556, 130.313] },
+  { id: "st_kamo", name: "賀茂駅", point: [33.55, 130.322] },
+  { id: "st_noke", name: "野芥駅", point: [33.545, 130.342] },
+  { id: "st_umebayashi", name: "梅林駅", point: [33.542, 130.36] },
+  { id: "st_fukudai", name: "福大前駅", point: [33.536, 130.366] },
+  { id: "st_nanokuma", name: "七隈駅", point: [33.533, 130.357] },
+  { id: "st_kanayama", name: "金山駅", point: [33.553, 130.364] },
+  { id: "st_chayama", name: "茶山駅", point: [33.566, 130.371] },
+  { id: "st_befu", name: "別府駅", point: [33.577, 130.371] },
+  { id: "st_ropponmatsu", name: "六本松駅", point: [33.579, 130.383] },
+  { id: "st_sakurazaka", name: "桜坂駅", point: [33.573, 130.39] },
+  { id: "st_yakuin_oodori", name: "薬院大通駅", point: [33.579, 130.397] },
+  { id: "st_yakuin", name: "薬院駅", point: [33.58, 130.401] },
+  { id: "st_watanabe", name: "渡辺通駅", point: [33.582, 130.403] },
+  { id: "st_tenjin_minami", name: "天神南駅", point: [33.587, 130.4] },
+  { id: "st_kushida", name: "櫛田神社前駅", point: [33.591, 130.412] },
+  // JR 筑肥線・香椎線・鹿児島本線
+  { id: "st_shimoyamato", name: "下山門駅", point: [33.575, 130.302] },
+  { id: "st_imaijuku", name: "今宿駅", point: [33.577, 130.276] },
+  { id: "st_kyudai_gakkentoshi", name: "九大学研都市駅", point: [33.576, 130.25] },
+  { id: "st_susenji", name: "周船寺駅", point: [33.566, 130.232] },
+  { id: "st_hatae", name: "波多江駅", point: [33.558, 130.214] },
+  { id: "st_maebaru", name: "筑前前原駅", point: placeById.itoshima.point },
+  { id: "st_kafuri", name: "加布里駅", point: [33.553, 130.178] },
+  { id: "st_kashii", name: "香椎駅", point: placeById.kashii.point },
+  { id: "st_wajiro", name: "和白駅", point: [33.687, 130.43] },
+  { id: "st_gannosu", name: "雁ノ巣駅", point: placeById.gannosu.point },
+  { id: "st_saitozaki", name: "西戸崎駅", point: [33.65, 130.363] },
+  { id: "st_yoshizuka", name: "吉塚駅", point: [33.607, 130.421] },
+  { id: "st_hakozaki_jr", name: "箱崎駅", point: [33.616, 130.426] },
+  { id: "st_chihaya", name: "千早駅", point: [33.648, 130.441] },
+  { id: "st_sasabaru", name: "笹原駅", point: [33.558, 130.43] },
+  { id: "st_minamifukuoka", name: "南福岡駅", point: [33.543, 130.45] },
+  { id: "st_kasuga", name: "春日駅", point: [33.532, 130.469] },
+  { id: "st_onojo", name: "大野城駅", point: [33.52, 130.48] },
+  { id: "st_mizuki", name: "水城駅", point: [33.5, 130.485] },
+  { id: "st_jr_futsukaichi", name: "二日市駅", point: [33.489, 130.51] },
+  // 西鉄 天神大牟田線・太宰府線・貝塚線
+  { id: "st_nt_tenjin", name: "西鉄福岡（天神）駅", point: [33.589, 130.399] },
+  { id: "st_nt_hirao", name: "西鉄平尾駅", point: [33.578, 130.4] },
+  { id: "st_nt_takamiya", name: "高宮駅", point: [33.566, 130.426] },
+  { id: "st_nt_ohashi", name: "大橋駅", point: [33.549, 130.426] },
+  { id: "st_nt_ijiri", name: "井尻駅", point: [33.556, 130.444] },
+  { id: "st_nt_zasshonokuma", name: "雑餉隈駅", point: [33.552, 130.444] },
+  { id: "st_nt_sakurana", name: "桜並木駅", point: [33.544, 130.454] },
+  { id: "st_nt_kasugabaru", name: "春日原駅", point: [33.532, 130.469] },
+  { id: "st_nt_shirakibaru", name: "白木原駅", point: [33.523, 130.473] },
+  { id: "st_nt_shimoori", name: "下大利駅", point: [33.512, 130.481] },
+  { id: "st_nt_tofuro", name: "都府楼前駅", point: [33.508, 130.508] },
+  { id: "st_nt_futsukaichi", name: "西鉄二日市駅", point: [33.503, 130.516] },
+  { id: "st_nt_dazaifu", name: "太宰府駅", point: placeById.dazaifu.point },
+  { id: "st_nt_najima", name: "名島駅", point: [33.64, 130.425] },
+  { id: "st_nt_kashii", name: "西鉄香椎駅", point: [33.655, 130.444] },
+  { id: "st_nt_kashii_kaenmae", name: "香椎花園前駅", point: [33.667, 130.437] },
+  { id: "st_nt_tonoharu", name: "唐の原駅", point: [33.674, 130.435] },
+  { id: "st_nt_mitoma", name: "三苫駅", point: [33.696, 130.425] },
+  { id: "st_nt_nishitetsu_shingu", name: "西鉄新宮駅", point: [33.716, 130.43] },
+];
+export const stationById = Object.fromEntries(
+  railStations.map((station) => [station.id, station]),
+) as Record<string, RailStation>;
+
+export const railLines: RailLine[] = [
+  {
+    id: "subway-airport",
+    name: "福岡市地下鉄空港線",
+    operator: "subway",
+    speedKmh: 32,
+    stopMinutes: 1.4,
+    stationIds: [
+      "st_meinohama", "st_muromi", "st_fujisaki", "st_nishijin", "st_tojinmachi",
+      "st_ohori", "st_akasaka", "st_tenjin", "st_nakasu", "st_gion", "st_hakata",
+      "st_higashihie", "st_airport",
+    ],
+  },
+  {
+    id: "subway-hakozaki",
+    name: "福岡市地下鉄箱崎線",
+    operator: "subway",
+    speedKmh: 30,
+    stopMinutes: 1.4,
+    stationIds: [
+      "st_nakasu", "st_gofukumachi", "st_chiyo", "st_maidashi", "st_hakozaki_miyamae",
+      "st_hakozaki_kyudai", "st_kaizuka",
+    ],
+  },
+  {
+    id: "subway-nanakuma",
+    name: "福岡市地下鉄七隈線",
+    operator: "subway",
+    speedKmh: 29,
+    stopMinutes: 1.4,
+    stationIds: [
+      "st_hashimoto", "st_jiromaru", "st_kamo", "st_noke", "st_umebayashi", "st_fukudai",
+      "st_nanokuma", "st_kanayama", "st_chayama", "st_befu", "st_ropponmatsu", "st_sakurazaka",
+      "st_yakuin_oodori", "st_yakuin", "st_watanabe", "st_tenjin_minami", "st_kushida", "st_hakata",
+    ],
+  },
+  {
+    id: "jr-chikuhi",
+    name: "JR筑肥線（福岡市〜糸島）",
+    operator: "jr",
+    speedKmh: 52,
+    stopMinutes: 1.8,
+    stationIds: [
+      "st_meinohama", "st_shimoyamato", "st_imaijuku", "st_kyudai_gakkentoshi", "st_susenji",
+      "st_hatae", "st_maebaru", "st_kafuri",
+    ],
+  },
+  {
+    id: "jr-kashii",
+    name: "JR香椎線",
+    operator: "jr",
+    speedKmh: 42,
+    stopMinutes: 1.8,
+    stationIds: ["st_kashii", "st_wajiro", "st_gannosu", "st_saitozaki"],
+  },
+  {
+    id: "jr-kagoshima-north",
+    name: "JR鹿児島本線（博多〜香椎）",
+    operator: "jr",
+    speedKmh: 58,
+    stopMinutes: 1.8,
+    stationIds: ["st_hakata", "st_yoshizuka", "st_hakozaki_jr", "st_chihaya", "st_kashii"],
+  },
+  {
+    id: "jr-kagoshima-south",
+    name: "JR鹿児島本線（博多〜二日市）",
+    operator: "jr",
+    speedKmh: 58,
+    stopMinutes: 1.8,
+    stationIds: [
+      "st_hakata", "st_yoshizuka", "st_sasabaru", "st_minamifukuoka", "st_kasuga", "st_onojo",
+      "st_mizuki", "st_jr_futsukaichi",
+    ],
+  },
+  {
+    id: "nishitetsu-tenjin-omuta",
+    name: "西鉄天神大牟田線",
+    operator: "nishitetsu",
+    speedKmh: 48,
+    stopMinutes: 1.5,
+    stationIds: [
+      "st_nt_tenjin", "st_yakuin", "st_nt_hirao", "st_nt_takamiya", "st_nt_ohashi", "st_nt_ijiri",
+      "st_nt_zasshonokuma", "st_nt_sakurana", "st_nt_kasugabaru", "st_nt_shirakibaru", "st_nt_shimoori",
+      "st_nt_tofuro", "st_nt_futsukaichi",
+    ],
+  },
+  {
+    id: "nishitetsu-dazaifu",
+    name: "西鉄太宰府線",
+    operator: "nishitetsu",
+    speedKmh: 35,
+    stopMinutes: 1.8,
+    stationIds: ["st_nt_futsukaichi", "st_nt_dazaifu"],
+  },
+  {
+    id: "nishitetsu-kaizuka",
+    name: "西鉄貝塚線",
+    operator: "nishitetsu",
+    speedKmh: 37,
+    stopMinutes: 1.8,
+    stationIds: [
+      "st_kaizuka", "st_nt_najima", "st_chihaya", "st_nt_kashii", "st_nt_kashii_kaenmae",
+      "st_nt_tonoharu", "st_wajiro", "st_nt_mitoma", "st_nt_nishitetsu_shingu",
+    ],
+  },
+];
+export const railLineById = Object.fromEntries(
+  railLines.map((line) => [line.id, line]),
+) as Record<string, RailLine>;
+
+export type PlaceStationAccess = { stationId: string; minutes: number };
+export const placeStationAccess: Record<string, PlaceStationAccess> = {
+  hakata: { stationId: "st_hakata", minutes: 3 },
+  canal: { stationId: "st_nakasu", minutes: 7 },
+  nakasu: { stationId: "st_nakasu", minutes: 3 },
+  tenjin: { stationId: "st_tenjin", minutes: 5 },
+  ohori: { stationId: "st_ohori", minutes: 5 },
+  maizuru: { stationId: "st_akasaka", minutes: 8 },
+  nishijin: { stationId: "st_nishijin", minutes: 4 },
+  momochi: { stationId: "st_nishijin", minutes: 17 },
+  tower: { stationId: "st_nishijin", minutes: 20 },
+  meinohama: { stationId: "st_meinohama", minutes: 5 },
+  itoshima: { stationId: "st_maebaru", minutes: 5 },
+  futami: { stationId: "st_kafuri", minutes: 28 },
+  dazaifu: { stationId: "st_nt_dazaifu", minutes: 4 },
+  kashii: { stationId: "st_kashii", minutes: 4 },
+  uminaka: { stationId: "st_saitozaki", minutes: 15 },
+  gannosu: { stationId: "st_gannosu", minutes: 4 },
+};
+
+function walkEdge(a: string, b: string, ...middle: Point[]): Edge {
+  return { a, b, mode: "walk", points: [placeById[a].point, ...middle, placeById[b].point] };
 }
+const localWalkEdges: Edge[] = [
+  walkEdge("hakata", "canal", [33.5887, 130.4171], [33.5888, 130.4114]),
+  walkEdge("canal", "nakasu", [33.5915, 130.4094]),
+  walkEdge("ohori", "maizuru", [33.5846, 130.3787]),
+  walkEdge("nishijin", "momochi", [33.5854, 130.3549], [33.5908, 130.3517]),
+  walkEdge("momochi", "tower"),
+  walkEdge("itoshima", "futami", [33.5621, 130.2078], [33.5724, 130.2192], [33.5911, 130.2185], [33.6102, 130.2062], [33.6271, 130.2055]),
+];
+const accessEdges: Edge[] = Object.entries(placeStationAccess).map(
+  ([placeId, access]) => ({
+    a: placeId,
+    b: access.stationId,
+    mode: "walk",
+    points: [placeById[placeId].point, stationById[access.stationId].point],
+    minutes: access.minutes,
+  }),
+);
+const transferEdges: Edge[] = [
+  {
+    a: "st_tenjin",
+    b: "st_nt_tenjin",
+    mode: "walk",
+    points: [stationById.st_tenjin.point, stationById.st_nt_tenjin.point],
+    minutes: 5,
+  },
+  {
+    a: "st_kashii",
+    b: "st_nt_kashii",
+    mode: "walk",
+    points: [stationById.st_kashii.point, stationById.st_nt_kashii.point],
+    minutes: 5,
+  },
+  {
+    a: "st_jr_futsukaichi",
+    b: "st_nt_futsukaichi",
+    mode: "walk",
+    points: [stationById.st_jr_futsukaichi.point, stationById.st_nt_futsukaichi.point],
+    minutes: 6,
+  },
+];
+export function railFare(km: number, operator: RailOperator) {
+  if (operator === "subway") {
+    const bands = [
+      [3, 210], [7, 260], [11, 300], [15, 340], [19, 360], [Infinity, 380],
+    ] as const;
+    return bands.find(([limit]) => km <= limit)![1];
+  }
+  const base = operator === "jr" ? 180 : 170;
+  const rate = operator === "jr" ? 17 : 15;
+  return Math.max(190, Math.ceil((base + km * rate) / 10) * 10);
+}
+function railEdgesFor(line: RailLine): Edge[] {
+  const result: Edge[] = [];
+  for (let from = 0; from < line.stationIds.length - 1; from++) {
+    for (let to = from + 1; to < line.stationIds.length; to++) {
+      const ids = line.stationIds.slice(from, to + 1),
+        points = ids.map((id) => stationById[id].point),
+        km = points.slice(1).reduce((sum, point, i) => {
+          const a = points[i];
+          const rad = Math.PI / 180;
+          const x = (point[1] - a[1]) * rad * Math.cos(((a[0] + point[0]) / 2) * rad);
+          const y = (point[0] - a[0]) * rad;
+          return sum + Math.sqrt(x * x + y * y) * 6371;
+        }, 0),
+        minutes = Math.max(
+          3,
+          Math.round((km / line.speedKmh) * 60 + (ids.length - 1) * line.stopMinutes + 2),
+        );
+      result.push({
+        a: ids[0],
+        b: ids.at(-1)!,
+        mode: "train",
+        points,
+        minutes,
+        cost: railFare(km, line.operator),
+        lineId: line.id,
+      });
+    }
+  }
+  return result;
+}
+const railEdges = railLines.flatMap(railEdgesFor);
+// All place-to-place routes are now resolved through this walking + railway graph.
 export const edges: Edge[] = [
-  edge("hakata", "canal", false, [33.5887, 130.4171], [33.5888, 130.4114]),
-  edge("canal", "nakasu", false, [33.5915, 130.4094]),
-  edge("nakasu", "tenjin", true, [33.5947, 130.4052], [33.592, 130.402]),
-  edge("hakata", "nakasu", true, [33.5946, 130.4147], [33.597, 130.4099]),
-  edge(
-    "tenjin",
-    "ohori",
-    true,
-    [33.5905, 130.3888],
-    [33.5904, 130.3792],
-    [33.5882, 130.3765],
-  ),
-  edge("ohori", "maizuru", false, [33.5846, 130.3787]),
-  edge("ohori", "nishijin", true, [33.5901, 130.3736], [33.5881, 130.3651]),
-  edge("nishijin", "momochi", false, [33.5854, 130.3549], [33.5908, 130.3517]),
-  edge("momochi", "tower", false),
-  edge(
-    "nishijin",
-    "meinohama",
-    true,
-    [33.5814, 130.3492],
-    [33.5808, 130.3371],
-    [33.5837, 130.3275],
-  ),
-  edge(
-    "meinohama",
-    "itoshima",
-    true,
-    [33.5826, 130.3135],
-    [33.5797, 130.3006],
-    [33.577, 130.2877],
-    [33.577, 130.26],
-    [33.5661, 130.2408],
-    [33.562, 130.2232],
-  ),
-  edge(
-    "itoshima",
-    "futami",
-    false,
-    [33.5621, 130.2078],
-    [33.5724, 130.2192],
-    [33.5911, 130.2185],
-    [33.6102, 130.2062],
-    [33.6271, 130.2055],
-  ),
-  edge(
-    "tenjin",
-    "dazaifu",
-    true,
-    [33.5786, 130.4017],
-    [33.563, 130.4121],
-    [33.552, 130.4283],
-    [33.5314, 130.4584],
-    [33.522, 130.479],
-    [33.5006, 130.5175],
-    [33.5075, 130.5272],
-    [33.5194, 130.5311],
-  ),
-  edge(
-    "hakata",
-    "kashii",
-    true,
-    [33.6067, 130.4224],
-    [33.6233, 130.426],
-    [33.6395, 130.437],
-    [33.6593, 130.4448],
-  ),
-  edge(
-    "kashii",
-    "gannosu",
-    true,
-    [33.6676, 130.44],
-    [33.687, 130.4312],
-    [33.6885, 130.4199],
-  ),
-  edge(
-    "gannosu",
-    "uminaka",
-    true,
-    [33.6741, 130.396],
-    [33.6726, 130.38],
-    [33.6654, 130.3661],
-  ),
+  ...localWalkEdges,
+  ...accessEdges,
+  ...transferEdges,
+  ...railEdges,
 ];
 export type Food = {
   name: string;

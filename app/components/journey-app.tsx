@@ -15,7 +15,6 @@ import {
   Mail,
   Heart,
   Footprints,
-  Bike,
   Clock3,
   FastForward,
   Plus,
@@ -40,7 +39,6 @@ import {
   type Trip,
   type Entry,
   type Category,
-  HOUR,
 } from "@/lib/simulation";
 import {
   personalities,
@@ -340,15 +338,8 @@ export default function JourneyApp() {
     remaining = activity ? Math.max(0, activity.end - now) : 0;
   const primaryMode = activity?.legs.some((l) => l.mode === "train")
       ? "train"
-      : activity?.legs.some((l) => l.mode === "bicycle")
-        ? "bicycle"
-        : "walk",
-    TransportIcon =
-      primaryMode === "train"
-        ? TrainFront
-        : primaryMode === "bicycle"
-          ? Bike
-          : Footprints;
+      : "walk",
+    TransportIcon = primaryMode === "train" ? TrainFront : Footprints;
   const spent = entries
       .filter((e) => e.amount > 0)
       .reduce((n, e) => n + e.amount, 0),
@@ -708,7 +699,7 @@ export default function JourneyApp() {
               </div>
               <p className="journey-map-note">
                 実在の地図上を旅するシミュレーション ·
-                経路・所要時間はPOC用の目安です
+                福岡市周辺の路線データによる経路・運賃・所要時間の目安です
               </p>
               <div className="recent-heading">
                 <h2>
@@ -1230,7 +1221,7 @@ export default function JourneyApp() {
               おこづかいは仮想予算で、実際の決済はありません。天気はいつも晴れ。写真はAIで制作したイメージで、実際の施設・料理を再現するものではありません。
             </p>
             <p>
-              POCでは実在の地図に、事前に用意した概略経路を表示します。運賃・所要時間・営業情報はシミュレーション値です。通知はアプリ内のたよりで確認できます。アプリを閉じた間のプッシュ通知は未対応です。
+              POCでは実在の地図に、福岡市周辺の徒歩リンクと鉄道路線グラフを重ねて表示します。運賃・所要時間・営業情報はシミュレーション値です。通知はアプリ内のたよりで確認できます。アプリを閉じた間のプッシュ通知は未対応です。
             </p>
           </div>
         </DialogContent>
