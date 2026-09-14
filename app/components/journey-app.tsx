@@ -47,6 +47,8 @@ import {
   type Personality,
 } from "@/lib/travel-data";
 const money = (n: number) => new Intl.NumberFormat("ja-JP").format(n);
+const imageSrc = (image: string) =>
+  `/images/${image.includes(".") ? image : `${image}.png`}`;
 const duration = (ms: number) => {
   const minutes = Math.max(1, Math.ceil(ms / 60000));
   return minutes < 60
@@ -112,7 +114,7 @@ function LetterCard({ entry, onClick }: { entry: Entry; onClick: () => void }) {
           className={`letter-image ${entry.image === "komugi" ? "portrait-photo" : ""}`}
         >
           <img
-            src={`/images/${entry.image}.png`}
+            src={imageSrc(entry.image)}
             alt={`${entry.title} こむぎの旅のイメージ写真`}
           />
           <span className="photo-tag">{categories[entry.category]}</span>
@@ -168,7 +170,7 @@ function SampleLetters() {
         <div className="letter-card" key={p.image}>
           <div className="letter-image">
             <img
-              src={`/images/${p.image}.png`}
+              src={imageSrc(p.image)}
               alt={`${p.title} 旅のイメージ`}
             />
             <span className="photo-tag">{p.tag}</span>
@@ -1182,7 +1184,7 @@ export default function JourneyApp() {
           {detail?.image && (
             <img
               className={`photo-detail ${detail.image === "komugi" ? "portrait-photo" : ""}`}
-              src={`/images/${detail.image}.png`}
+              src={imageSrc(detail.image)}
               alt="こむぎの旅のイメージ写真"
             />
           )}

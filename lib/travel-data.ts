@@ -43,6 +43,7 @@ export const places: Place[] = [
     openHour: 7,
     closeHour: 20,
     diary: "リュックを背負ったら、なんだか少し勇気が出たよ。いってきます！",
+    image: "hakata.webp",
   },
   {
     id: "hakata-temple",
@@ -55,6 +56,7 @@ export const places: Place[] = [
     openHour: 8,
     closeHour: 18,
     diary: "大きなお堂の前で、静かな時間。旅の安全をお願いしてきたよ。",
+    image: "hakata-temple.webp",
   },
   {
     id: "hakata-mall",
@@ -67,6 +69,7 @@ export const places: Place[] = [
     openHour: 10,
     closeHour: 21,
     diary: "お店をいろいろ見て回ったよ。知らないものが並んでいると、つい長居しちゃうね。",
+    image: "hakata-mall.webp",
   },
   {
     id: "nakasu",
@@ -80,6 +83,7 @@ export const places: Place[] = [
     closeHour: 20,
     diary:
       "川面がきらきらしていたよ。屋台から、おいしそうな匂い。おなかが鳴っちゃった。",
+    image: "nakasu.webp",
   },
   {
     id: "tenjin",
@@ -93,6 +97,7 @@ export const places: Place[] = [
     closeHour: 20,
     diary:
       "にぎやかな道を、てくてく。小さな路地を見つけると、つい曲がりたくなるんだ。",
+    image: "tenjin.webp",
   },
   {
     id: "ohori",
@@ -106,6 +111,7 @@ export const places: Place[] = [
     closeHour: 19,
     diary:
       "池のまわりを一周したよ。水鳥を数えていたら、いつのまにか時間がたっていた。",
+    image: "ohori.webp",
   },
   {
     id: "maizuru",
@@ -119,6 +125,7 @@ export const places: Place[] = [
     closeHour: 19,
     diary:
       "石垣の上から、福岡の街が見えたよ。ずっと昔にも、ここを旅した誰かがいたのかな。",
+    image: "maizuru.webp",
   },
   {
     id: "nishijin",
@@ -132,6 +139,7 @@ export const places: Place[] = [
     closeHour: 20,
     diary:
       "商店街を歩いていたら、すっかりこの街の気分。小さな寄り道がいちばん好きかも。",
+    image: "nishijin.webp",
   },
   {
     id: "momochi",
@@ -145,7 +153,7 @@ export const places: Place[] = [
     closeHour: 19,
     diary:
       "はじめて見る、福岡の海！靴に砂が入ったけど、なんだかそれもうれしいな。",
-    image: "coast",
+    image: "momochi.webp",
   },
   {
     id: "tower",
@@ -159,6 +167,7 @@ export const places: Place[] = [
     closeHour: 20,
     diary:
       "展望タワーから、街と海を見渡したよ。あの遠くの道も、いつか歩いてみたいな。",
+    image: "tower.webp",
   },
   {
     id: "dome",
@@ -172,6 +181,7 @@ export const places: Place[] = [
     closeHour: 20,
     diary:
       "大きなドームを見上げたよ。中から聞こえる歓声に、こむぎもわくわくしたな。",
+    image: "dome.webp",
   },
   {
     id: "meinohama",
@@ -184,6 +194,7 @@ export const places: Place[] = [
     openHour: 7,
     closeHour: 20,
     diary: "港のほうから潮の香り。海のある暮らしって、どんな感じなんだろう。",
+    image: "meinohama.webp",
   },
   {
     id: "itoshima",
@@ -197,6 +208,7 @@ export const places: Place[] = [
     closeHour: 20,
     diary:
       "列車を降りたら、空が広くなった気がしたよ。海へ続く道を探してみよう。",
+    image: "itoshima.webp",
   },
   {
     id: "futami",
@@ -210,7 +222,7 @@ export const places: Place[] = [
     closeHour: 19,
     diary:
       "青い海が、どこまでも続いていたよ。波の音を聞いていたら、帰りたくなくなっちゃった。",
-    image: "coast",
+    image: "futami.webp",
   },
   {
     id: "dazaifu",
@@ -224,6 +236,7 @@ export const places: Place[] = [
     closeHour: 18,
     diary:
       "大きな木に囲まれて、背筋がすっと伸びたよ。これからもいい旅ができますように。",
+    image: "dazaifu.webp",
   },
   {
     id: "kashii",
@@ -237,6 +250,7 @@ export const places: Place[] = [
     closeHour: 18,
     diary:
       "木漏れ日の参道をゆっくり歩いたよ。葉っぱの揺れる音まで、聞こえるくらい静かだった。",
+    image: "kashii.webp",
   },
   {
     id: "uminaka",
@@ -250,6 +264,7 @@ export const places: Place[] = [
     closeHour: 17,
     diary:
       "広い芝生で、大きく深呼吸。今日はいつもより、たくさん歩けそうな気がする。",
+    image: "uminaka.webp",
   },
   {
     id: "gannosu",
@@ -263,7 +278,7 @@ export const places: Place[] = [
     closeHour: 19,
     diary:
       "海沿いを走る風が気持ちいいね。リュックも、なんだか軽くなったみたい。",
-    image: "coast",
+    image: "gannosu.webp",
   },
 ];
 /**
