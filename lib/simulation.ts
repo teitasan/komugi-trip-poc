@@ -331,15 +331,17 @@ function beginMove(t: Trip, to: string, at: number, returning = false) {
     label: `${placeById[to].name}へ${returning ? "帰る" : "移動中"}`,
   };
 }
+function appendUniquePoints(target: Point[], points: Point[]) {
+  for (const point of points) {
+    const last = target[target.length - 1];
+    if (!last || last[0] !== point[0] || last[1] !== point[1])
+      target.push(point);
+  }
+}
 function appendRouteHistory(t: Trip, activity: Activity) {
   const history = t.routeHistory ?? [placeById[activity.from].point];
   for (const leg of activity.legs) {
-    for (const point of leg.points) {
-      const last = history[history.length - 1];
-      if (!last || last[0] !== point[0] || last[1] !== point[1]) {
-        history.push(point);
-      }
-    }
+    appendUniquePoints(history, leg.points);
   }
   t.routeHistory = history;
 }
@@ -361,13 +363,7 @@ function hydrateRouteHistory(t: Trip) {
   const history: Point[] = [placeById.hakata.point];
   for (let i = 1; i < stops.length; i++) {
     const legs = getRoute(stops[i - 1], stops[i], t.personality);
-    for (const leg of legs) {
-      for (const point of leg.points) {
-        const last = history[history.length - 1];
-        if (!last || last[0] !== point[0] || last[1] !== point[1])
-          history.push(point);
-      }
-    }
+    for (const leg of legs) appendUniquePoints(history, leg.points);
   }
   t.routeHistory = history;
 }
@@ -660,6 +656,44 @@ export function currentPosition(t: Trip, now: number): Point {
     return leg.points[leg.points.length - 1];
   }
   return placeById[t.activity.to].point;
+}
+export function currentTravelPath(t: Trip, now: number): Point[] {
+  const origin = t.activity.kind === "move" ? t.activity.from : t.placeId;
+  const history = [
+    ...(t.routeHistory ?? [placeById[origin]?.point ?? placeById.hakata.point]),
+  ];
+  if (t.activity.kind !== "move") return history;
+  let elapsed = Math.max(0, now - t.activity.start) / 60000;
+  for (const leg of t.activity.legs) {
+    if (!leg.points.length) continue;
+    if (elapsed > leg.minutes) {
+      appendUniquePoints(history, leg.points);
+      elapsed -= leg.minutes;
+      continue;
+    }
+    const total = pathLength(leg.points),
+      target = total * Math.min(1, elapsed / leg.minutes);
+    let walked = 0;
+    const prefix: Point[] = [leg.points[0]];
+    for (let i = 1; i < leg.points.length; i++) {
+      const a = leg.points[i - 1],
+        b = leg.points[i],
+        segment = distance(a, b);
+      if (walked + segment >= target) {
+        const ratio = segment ? (target - walked) / segment : 0;
+        prefix.push([
+          a[0] + (b[0] - a[0]) * ratio,
+          a[1] + (b[1] - a[1]) * ratio,
+        ]);
+        break;
+      }
+      prefix.push(b);
+      walked += segment;
+    }
+    appendUniquePoints(history, prefix);
+    break;
+  }
+  return history;
 }
 export function fund(t: Trip, amount: number, requestId: string, at: number) {
   if (t.commands.includes(requestId)) return;

@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import JourneyMap from "./journey-map";
 import {
   currentPosition,
+  currentTravelPath,
   tripDay,
   type Trip,
   type Entry,
@@ -351,7 +352,7 @@ export default function JourneyApp() {
   );
   const activity = trip?.activity,
     position = trip ? currentPosition(trip, now) : placeById.hakata.point,
-    traveledRoute = trip?.routeHistory ?? [],
+    traveledRoute = trip ? currentTravelPath(trip, now) : [],
     route =
       activity?.kind === "move" ? activity.legs.flatMap((l) => l.points) : [],
     remaining = activity ? Math.max(0, activity.end - now) : 0;
