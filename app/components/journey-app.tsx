@@ -351,6 +351,7 @@ export default function JourneyApp() {
   );
   const activity = trip?.activity,
     position = trip ? currentPosition(trip, now) : placeById.hakata.point,
+    traveledRoute = trip?.routeHistory ?? [],
     route =
       activity?.kind === "move" ? activity.legs.flatMap((l) => l.points) : [],
     remaining = activity ? Math.max(0, activity.end - now) : 0;
@@ -647,6 +648,7 @@ export default function JourneyApp() {
               <div className="map-panel">
                 <JourneyMap
                   position={position}
+                  traveledRoute={traveledRoute}
                   route={route}
                   moving={activity?.kind === "move"}
                   bubble={
@@ -657,6 +659,22 @@ export default function JourneyApp() {
                         : undefined
                   }
                 />
+                {(traveledRoute.length > 1 || route.length > 1) && (
+                  <div className="map-route-legend" aria-label="経路の凡例">
+                    {traveledRoute.length > 1 && (
+                      <span>
+                        <i className="route-key traveled" />
+                        通った道
+                      </span>
+                    )}
+                    {route.length > 1 && (
+                      <span>
+                        <i className="route-key planned" />
+                        移動中の経路
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="map-top">
                   <div className="map-location">
                     <MapPin />

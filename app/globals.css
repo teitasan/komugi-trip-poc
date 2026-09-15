@@ -390,6 +390,40 @@ svg {
   pointer-events: none;
   z-index: 2;
 }
+.map-route-legend {
+  position: absolute;
+  top: 76px;
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  border: 1px solid #dfe7e8;
+  border-radius: 10px;
+  background: #fffffff2;
+  box-shadow: 0 4px 18px #31486012;
+  color: #647985;
+  font-size: 11px;
+  pointer-events: none;
+}
+.map-route-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.route-key {
+  display: inline-block;
+  width: 20px;
+  height: 0;
+  border-top: 3px solid #d87d4c;
+  border-radius: 999px;
+}
+.route-key.planned {
+  border-top-color: #819eaa;
+  border-top-style: dashed;
+}
 .map-location {
   background: #fff;
   box-shadow: 0 4px 18px #31486012;
@@ -1141,6 +1175,13 @@ svg {
     left: 12px;
     top: 12px;
     right: 12px;
+  }
+  .map-route-legend {
+    top: 64px;
+    right: 12px;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 10px;
   }
   .map-location {
     padding: 8px 10px;

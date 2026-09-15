@@ -24,11 +24,13 @@ function loadLeaflet() {
 }
 export default function JourneyMap({
   position = [33.5897, 130.4207],
+  traveledRoute = [],
   route = [],
   moving = false,
   bubble,
 }: {
   position?: MapPoint;
+  traveledRoute?: MapPoint[];
   route?: MapPoint[];
   moving?: boolean;
   bubble?: string;
@@ -79,13 +81,24 @@ export default function JourneyMap({
       map = instance.current;
     layers.current.forEach((l) => l.remove());
     layers.current = [];
+    if (traveledRoute.length > 1) {
+      const line = L.polyline(traveledRoute, {
+        color: "#d87d4c",
+        weight: 5,
+        opacity: 0.95,
+        lineCap: "round",
+        lineJoin: "round",
+      }).addTo(map);
+      layers.current.push(line);
+    }
     if (route.length > 1) {
       const line = L.polyline(route, {
-        color: "#d87d4c",
+        color: "#819eaa",
         weight: 4,
         opacity: 0.9,
-        dashArray: "3,10",
+        dashArray: "6,10",
         lineCap: "round",
+        lineJoin: "round",
       }).addTo(map);
       layers.current.push(line);
       layers.current.push(
@@ -93,16 +106,17 @@ export default function JourneyMap({
           radius: 7,
           color: "white",
           weight: 3,
-          fillColor: "#d57c4d",
+          fillColor: "#819eaa",
           fillOpacity: 1,
         }).addTo(map),
       );
     }
-    const key = JSON.stringify(route);
+    const key = JSON.stringify([traveledRoute, route]);
     if (key !== lastRoute.current) {
       lastRoute.current = key;
-      if (route.length > 1)
-        map.fitBounds(L.latLngBounds([...route, position]), {
+      const boundsPoints = [...traveledRoute, ...route, position];
+      if (boundsPoints.length > 1)
+        map.fitBounds(L.latLngBounds(boundsPoints), {
           paddingTopLeft: [70, 95],
           paddingBottomRight: [70, 120],
           maxZoom: 13,
@@ -130,7 +144,14 @@ export default function JourneyMap({
         },
       );
     layers.current.push(marker);
-  }, [ready, JSON.stringify(position), JSON.stringify(route), moving, bubble]);
+  }, [
+    ready,
+    JSON.stringify(position),
+    JSON.stringify(traveledRoute),
+    JSON.stringify(route),
+    moving,
+    bubble,
+  ]);
   return (
     <>
       <div

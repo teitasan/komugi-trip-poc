@@ -74,6 +74,8 @@ export type Trip = {
   meals: string[];
   nights: string[];
   distanceKm: number;
+  /** Coordinates already traveled by the character, kept for the map history. */
+  routeHistory?: Point[];
   commands: string[];
   completedAt?: number;
   weather: "sunny";
@@ -329,6 +331,18 @@ function beginMove(t: Trip, to: string, at: number, returning = false) {
     label: `${placeById[to].name}へ${returning ? "帰る" : "移動中"}`,
   };
 }
+function appendRouteHistory(t: Trip, activity: Activity) {
+  const history = t.routeHistory ?? [placeById[activity.from].point];
+  for (const leg of activity.legs) {
+    for (const point of leg.points) {
+      const last = history[history.length - 1];
+      if (!last || last[0] !== point[0] || last[1] !== point[1]) {
+        history.push(point);
+      }
+    }
+  }
+  t.routeHistory = history;
+}
 function visit(t: Trip, at: number) {
   const p = placeById[t.placeId];
   if (!t.visited.includes(p.id)) t.visited.push(p.id);
@@ -546,6 +560,7 @@ export function createTrip(
     meals: [],
     nights: [],
     distanceKm: 0,
+    routeHistory: [placeById.hakata.point],
     commands: [],
     weather: "sunny",
   };
@@ -579,6 +594,7 @@ export function advance(t: Trip, now: number) {
       decide(t, at);
     } else if (activity.kind === "move") {
       t.distanceKm += activity.legs.reduce((n, l) => n + l.km, 0);
+      appendRouteHistory(t, activity);
       t.placeId = activity.to;
       if (activity.returning) finish(t, at);
       else if (visitWindow(placeById[t.placeId], at)) visit(t, at);
