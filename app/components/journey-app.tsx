@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   PawPrint,
   Map,
-  BookOpen,
   Images,
   Wallet,
   Info,
@@ -12,7 +11,7 @@ import {
   TrainFront,
   ArrowUpRight,
   Send,
-  Mail,
+  MessageCircle,
   Heart,
   Footprints,
   Clock3,
@@ -72,7 +71,7 @@ const categories: Record<Category, string> = {
   food: "ごはん",
   stay: "おやど",
   sightseeing: "観光",
-  letter: "たより",
+  letter: "メッセージ",
   funding: "支給",
 };
 const categoryColors: Record<Category, string> = {
@@ -102,55 +101,64 @@ type Snapshot = {
   reserve: number;
   history: { id: string; created_at: number; status: string }[];
 };
-function LetterCard({ entry, onClick }: { entry: Entry; onClick: () => void }) {
+function MessageCard({ entry, onClick }: { entry: Entry; onClick: () => void }) {
   return (
     <button
-      className={`letter-card ${entry.image ? "" : "text-letter"}`}
+      className={`message-card ${entry.image ? "has-media" : "text-message"}`}
       onClick={onClick}
-      aria-label={`${entry.title} 詳しく読む`}
+      aria-label={`${entry.title} メッセージを開く`}
     >
-      {entry.image ? (
-        <div
-          className={`letter-image ${entry.image === "komugi" ? "portrait-photo" : ""}`}
-        >
-          <img
-            src={imageSrc(entry.image)}
-            alt={`${entry.title} こむぎの旅のイメージ写真`}
-          />
-          <span className="photo-tag">{categories[entry.category]}</span>
-        </div>
-      ) : (
-        <div className="letter-envelope">
-          <Mail size={26} />
-          <span>こむぎからのお手紙</span>
-        </div>
-      )}
-      <div className="letter-copy">
-        <div className="letter-meta">
-          <span>{placeById[entry.placeId].area}</span>
+      <span className="message-avatar" aria-hidden="true">
+        <img src="/images/komugi.png" alt="" />
+      </span>
+      <span className="message-body">
+        <span className="message-meta">
+          <strong>こむぎ</strong>
           <span>
-            {entry.day}日目 · {time(entry.time)}
+            {placeById[entry.placeId].area} · {entry.day}日目 {time(entry.time)}
           </span>
-        </div>
-        <h3>{entry.title}</h3>
-        <p>
-          {entry.text.length > 49 ? entry.text.slice(0, 49) + "…" : entry.text}
-        </p>
-        <div className="letter-foot">
-          <span>
-            {entry.amount > 0
-              ? `使ったお金 ¥${money(entry.amount)}`
-              : "こむぎより"}
+        </span>
+        <span className="message-bubble">
+          {entry.image && (
+            <span
+              className={`message-image ${entry.image === "komugi" ? "portrait-photo" : ""}`}
+            >
+              <img
+                src={imageSrc(entry.image)}
+                alt={`${entry.title} こむぎの旅のイメージ写真`}
+              />
+              <span className="photo-tag">{categories[entry.category]}</span>
+            </span>
+          )}
+          {!entry.image && (
+            <span className="message-kind">
+              <MessageCircle size={14} />
+              {categories[entry.category]}
+            </span>
+          )}
+          <span className="message-copy">
+            <strong>{entry.title}</strong>
+            <span>
+              {entry.text.length > 90 ? entry.text.slice(0, 90) + "…" : entry.text}
+            </span>
           </span>
-          <ArrowUpRight />
-        </div>
-      </div>
+          <span className="message-foot">
+            <span>
+              {entry.amount > 0
+                ? `使ったお金 ¥${money(entry.amount)}`
+                : "こむぎから"}
+            </span>
+            <span className="message-read">既読</span>
+          </span>
+        </span>
+      </span>
+      <ArrowUpRight className="message-open" aria-hidden="true" />
     </button>
   );
 }
-function SampleLetters() {
+function SampleMessages() {
   return (
-    <div className="letter-grid">
+    <div className="message-thread message-thread-preview">
       {[
         {
           image: "coast",
@@ -167,23 +175,31 @@ function SampleLetters() {
           text: "次はなにを食べようかな。",
         },
       ].map((p) => (
-        <div className="letter-card" key={p.image}>
-          <div className="letter-image">
-            <img
-              src={imageSrc(p.image)}
-              alt={`${p.title} 旅のイメージ`}
-            />
-            <span className="photo-tag">{p.tag}</span>
+        <article className="sample-message" key={p.image}>
+          <div className="message-avatar" aria-hidden="true">
+            <img src="/images/komugi.png" alt="" />
           </div>
-          <div className="letter-copy">
-            <div className="letter-meta">
-              <span>福岡 · {p.area}</span>
-              <span>旅のイメージ</span>
+          <div className="message-body">
+            <div className="message-meta">
+              <strong>こむぎ</strong>
+              <span>福岡 · 旅のイメージ</span>
             </div>
-            <h3>{p.title}</h3>
-            <p>{p.text}</p>
+            <div className="message-bubble">
+              <div className="message-image">
+                <img src={imageSrc(p.image)} alt={`${p.title} 旅のイメージ`} />
+                <span className="photo-tag">{p.tag}</span>
+              </div>
+              <div className="message-copy">
+                <strong>{p.title}</strong>
+                <span>{p.text}</span>
+              </div>
+              <div className="message-foot">
+                <span>こむぎから</span>
+                <span className="message-read">旅の予告</span>
+              </div>
+            </div>
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );
@@ -321,13 +337,13 @@ export default function JourneyApp() {
     total = trip?.totalBudget ?? days * Number(daily || 0),
     entries = trip?.entries ?? [],
     photoEntries = entries.filter((e) => e.image),
-    letters = entries.filter(
+    messages = entries.filter(
       (e) => e.category !== "transport" && e.category !== "funding",
     ),
     latestPhoto = photoEntries.at(-1),
     recent = [
       ...(latestPhoto ? [latestPhoto] : []),
-      ...letters.filter((e) => e.id !== latestPhoto?.id).slice(-1),
+      ...messages.filter((e) => e.id !== latestPhoto?.id).slice(-1),
     ].slice(0, 2),
     expenses = entries.filter((e) => e.amount !== 0);
   const currentOtherTrip = snapshot?.history.find(
@@ -360,7 +376,7 @@ export default function JourneyApp() {
       setSetup(false);
       setTab("map");
       setNotice(
-        "こむぎを旅に送り出しました。最初の写真は、5分ほどで届きます。",
+        "こむぎを旅に送り出しました。最初のメッセージは、5分ほどで届きます。",
       );
     }
   };
@@ -387,7 +403,7 @@ export default function JourneyApp() {
     register({
       name: "read_komugi_trip",
       description:
-        "現在画面で見守っているこむぎの旅・残金・直近のたよりを読む。",
+        "現在画面で見守っているこむぎの旅・残金・直近のメッセージを読む。",
       inputSchema: {
         type: "object",
         properties: {},
@@ -436,7 +452,7 @@ export default function JourneyApp() {
   const empty = (label: string) => (
     <section className="panel screen-panel">
       <h2>{label}</h2>
-      <p className="screen-intro">こむぎの旅の記録が、ここに増えていきます。</p>
+      <p className="screen-intro">こむぎとのメッセージが、ここに増えていきます。</p>
       <Button disabled={loading} onClick={() => setSetup(true)}>
         はじめての旅に送り出す
         <Send />
@@ -461,8 +477,8 @@ export default function JourneyApp() {
             いまのこむぎ
           </TabsTrigger>
           <TabsTrigger value="diary">
-            <BookOpen />
-            旅のたより
+            <MessageCircle />
+            メッセージ
           </TabsTrigger>
           <TabsTrigger value="album">
             <Images />
@@ -705,8 +721,8 @@ export default function JourneyApp() {
               </p>
               <div className="recent-heading">
                 <h2>
-                  <Mail />
-                  こむぎからのたより
+                  <MessageCircle />
+                  こむぎのメッセージ
                   {trip && (
                     <span className="count-pill">
                       {
@@ -724,7 +740,7 @@ export default function JourneyApp() {
                     className="text-button"
                     onClick={() => setTab("diary")}
                   >
-                    すべて読む
+                    すべて見る
                     <ArrowUpRight size={15} />
                   </button>
                 ) : (
@@ -732,9 +748,9 @@ export default function JourneyApp() {
                 )}
               </div>
               {trip ? (
-                <div className="letter-grid">
+                <div className="message-thread message-thread-preview">
                   {recent.map((e) => (
-                    <LetterCard
+                    <MessageCard
                       key={e.id}
                       entry={e}
                       onClick={() => setDetail(e)}
@@ -742,7 +758,7 @@ export default function JourneyApp() {
                   ))}
                 </div>
               ) : (
-                <SampleLetters />
+                <SampleMessages />
               )}
             </div>
           </div>
@@ -750,9 +766,9 @@ export default function JourneyApp() {
         <TabsContent value="diary">
           {trip ? (
             <section className="panel screen-panel">
-              <h2>旅のたより</h2>
+              <h2>メッセージ</h2>
               <p className="screen-intro">
-                寄り道も、ごはんも、おやすみも。こむぎの言葉で届く、旅の記録。
+                寄り道も、ごはんも、おやすみも。こむぎから届く、旅のメッセージ。
               </p>
               <div className="day-list">
                 <button
@@ -771,21 +787,33 @@ export default function JourneyApp() {
                   </button>
                 ))}
               </div>
-              <div className="screen-letter-grid">
+              <div className="message-shell">
+                <div className="message-shell-head">
+                  <div className="message-shell-avatar">
+                    <img src="/images/komugi.png" alt="" />
+                  </div>
+                  <div>
+                    <strong>こむぎ</strong>
+                    <span>{active ? "旅の途中 · メッセージ" : "旅の記録"}</span>
+                  </div>
+                  <MessageCircle aria-hidden="true" />
+                </div>
+                <div className="message-thread">
                 {[...entries]
                   .reverse()
                   .filter((e) => !dayFilter || e.day === dayFilter)
                   .map((e) => (
-                    <LetterCard
+                    <MessageCard
                       key={e.id}
                       entry={e}
                       onClick={() => setDetail(e)}
                     />
                   ))}
+                </div>
               </div>
             </section>
           ) : (
-            empty("旅のたより")
+            empty("メッセージ")
           )}
         </TabsContent>
         <TabsContent value="album">
@@ -871,9 +899,9 @@ export default function JourneyApp() {
                 <span className="demo-caption">AIで制作した旅のイメージ</span>
               </div>
               {photoEntries.length ? (
-                <div className="screen-letter-grid">
-                  {[...photoEntries].reverse().map((e) => (
-                    <LetterCard
+              <div className="message-thread">
+                {[...photoEntries].reverse().map((e) => (
+                    <MessageCard
                       key={e.id}
                       entry={e}
                       onClick={() => setDetail(e)}
@@ -1175,7 +1203,7 @@ export default function JourneyApp() {
           if (!open) setDetail(null);
         }}
       >
-        <DialogContent className="letter-dialog">
+        <DialogContent className="message-dialog">
           <DialogTitle>{detail?.title}</DialogTitle>
           <DialogDescription>
             {detail &&
@@ -1214,7 +1242,7 @@ export default function JourneyApp() {
           </DialogDescription>
           <div className="about-copy">
             <p>
-              日数とおこづかいを決めたら、あとはこむぎにおまかせ。食べたり、歩いたり、ちょっと寄り道したり。気ままな旅から、たよりが届きます。
+              日数とおこづかいを決めたら、あとはこむぎにおまかせ。食べたり、歩いたり、ちょっと寄り道したり。気ままな旅から、メッセージが届きます。
             </p>
             <p>
               旅行の状態と支出は保存されます。同じブラウザで開くと続きから見守れます。画面下の早送りを使えば、数日間の旅をすぐに体験できます。
@@ -1223,7 +1251,7 @@ export default function JourneyApp() {
               おこづかいは仮想予算で、実際の決済はありません。天気はいつも晴れ。写真はAIで制作したイメージで、実際の施設・料理を再現するものではありません。
             </p>
             <p>
-              POCでは実在の地図に、福岡市周辺の徒歩リンクと鉄道路線グラフを重ねて表示します。運賃・所要時間・営業情報はシミュレーション値です。通知はアプリ内のたよりで確認できます。アプリを閉じた間のプッシュ通知は未対応です。
+              POCでは実在の地図に、福岡市周辺の徒歩リンクと鉄道路線グラフを重ねて表示します。運賃・所要時間・営業情報はシミュレーション値です。メッセージはアプリ内で確認できます。アプリを閉じた間のプッシュ通知は未対応です。
             </p>
           </div>
         </DialogContent>
