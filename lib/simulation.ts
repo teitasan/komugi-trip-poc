@@ -343,6 +343,34 @@ function appendRouteHistory(t: Trip, activity: Activity) {
   }
   t.routeHistory = history;
 }
+function hydrateRouteHistory(t: Trip) {
+  if (t.routeHistory) return;
+  const stops = ["hakata"];
+  for (const placeId of t.visited) {
+    if (placeById[placeId] && stops[stops.length - 1] !== placeId)
+      stops.push(placeId);
+  }
+  const currentStop = t.activity.kind === "move" ? t.activity.from : t.placeId;
+  if (placeById[currentStop] && stops[stops.length - 1] !== currentStop)
+    stops.push(currentStop);
+  if (
+    t.status === "completed" &&
+    stops[stops.length - 1] !== "hakata"
+  )
+    stops.push("hakata");
+  const history: Point[] = [placeById.hakata.point];
+  for (let i = 1; i < stops.length; i++) {
+    const legs = getRoute(stops[i - 1], stops[i], t.personality);
+    for (const leg of legs) {
+      for (const point of leg.points) {
+        const last = history[history.length - 1];
+        if (!last || last[0] !== point[0] || last[1] !== point[1])
+          history.push(point);
+      }
+    }
+  }
+  t.routeHistory = history;
+}
 function visit(t: Trip, at: number) {
   const p = placeById[t.placeId];
   if (!t.visited.includes(p.id)) t.visited.push(p.id);
@@ -574,6 +602,7 @@ export function createTrip(
   return t;
 }
 export function advance(t: Trip, now: number) {
+  hydrateRouteHistory(t);
   const until = Math.max(t.lastProcessedAt, Math.min(now, t.deadline + DAY));
   let loops = 0;
   while (t.status === "active" && t.activity.end <= until) {
