@@ -29,7 +29,7 @@ function loadLeaflet() {
   return leafletLoading;
 }
 export default function JourneyMap({
-  position = [33.5897, 130.4207],
+  position = [33.5900413, 130.4199026],
   traveledSegments = [],
   route = [],
   moving = false,

@@ -17,7 +17,9 @@ import {
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
-const ROUTE_DATA_VERSION = 2;
+// Increment when curated station coordinates or route geometry changes so
+// saved trips rebuild their historical paths with the current data.
+const ROUTE_DATA_VERSION = 3;
 export type Category =
   | "transport"
   | "food"
