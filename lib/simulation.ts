@@ -17,6 +17,9 @@ import {
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
+// Sightseeing winds down in the evening. If no late meal is needed, Komugi
+// should look for a place to sleep instead of repeatedly emitting bench rests.
+const LODGING_HOUR = 21;
 // Increment when curated station coordinates or route geometry changes so
 // saved trips rebuild their historical paths with the current data.
 const ROUTE_DATA_VERSION = 3;
@@ -499,7 +502,7 @@ function decide(t: Trip, at: number) {
       return;
     }
   }
-  if ((hour >= 23 || hour < 7) && !t.nights.includes(nightKey)) {
+  if ((hour >= LODGING_HOUR || hour < 7) && !t.nights.includes(nightKey)) {
     t.nights.push(nightKey);
     const available = t.balance - reserve(t, at);
     const paidChoices = hotels.filter(
@@ -581,7 +584,16 @@ function decide(t: Trip, at: number) {
     "ベンチで、ちょっとひと休み。",
     "残りのおこづかいを数えて、今日はゆっくり。何もしない時間も、旅のうちだね。",
   );
-  t.activity = idleActivity(t, "rest", at, HOUR, "近くのベンチで、ひと休み");
+  const nightAt = jstStart(at) + LODGING_HOUR * HOUR;
+  const restDuration =
+    at < nightAt && nightAt - at < HOUR ? nightAt - at : HOUR;
+  t.activity = idleActivity(
+    t,
+    "rest",
+    at,
+    Math.max(60000, restDuration),
+    "近くのベンチで、ひと休み",
+  );
 }
 export function createTrip(
   id: string,
@@ -637,6 +649,18 @@ export function createTrip(
 export function advance(t: Trip, now: number) {
   hydrateRouteHistory(t);
   const until = Math.max(t.lastProcessedAt, Math.min(now, t.deadline + DAY));
+  // Migrate a rest activity created before the evening lodging rule. This
+  // makes an already-open trip leave the bench on the next refresh as well.
+  if (
+    t.activity.kind === "rest" &&
+    t.activity.label === "近くのベンチで、ひと休み"
+  ) {
+    const nightAt = jstStart(until) + LODGING_HOUR * HOUR;
+    t.activity.end =
+      until >= nightAt
+        ? Math.min(t.activity.end, until)
+        : Math.min(t.activity.end, nightAt);
+  }
   let loops = 0;
   while (t.status === "active" && t.activity.end <= until) {
     if (++loops > 1000) throw new Error("旅の進行が多すぎます");

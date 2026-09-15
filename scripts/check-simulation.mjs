@@ -130,6 +130,14 @@ assert(
   campingTrip.entries.some((entry) => entry.title === "野宿で、おやすみ。"),
   "budget-free stay did not use the camping fallback",
 );
+const eveningStart = Date.UTC(2026, 8, 14, 20) - 9 * HOUR; // 20:00 JST
+const eveningTrip = createTrip("evening-lodging", 3, 10000, "foodie", eveningStart, 1);
+advance(eveningTrip, eveningStart + 4 * HOUR);
+assert(
+  eveningTrip.entries.filter((entry) => entry.title === "ベンチで、ちょっとひと休み。").length <= 1,
+  "evening fallback repeated bench rests",
+);
+assert.equal(eveningTrip.activity.kind, "sleep", "evening fallback did not choose lodging");
 console.log(
-  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, walk/train route data, late-night chain fallback, and camping fallback passed.`,
+  `${cases} trips passed: all return on time, no negative balances, ledger reconciliation, identical catch-up, idempotency; sponsorship, position, walk/train route data, late-night chain fallback, camping fallback, and evening lodging passed.`,
 );
