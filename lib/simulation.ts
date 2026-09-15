@@ -17,6 +17,7 @@ import {
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
+const ROUTE_DATA_VERSION = 2;
 export type Category =
   | "transport"
   | "food"
@@ -79,6 +80,8 @@ export type Trip = {
   routeHistory?: Point[];
   /** Completed route segments, retaining the transport mode for map colors. */
   routeSegments?: RouteSegment[];
+  /** Version of the coordinate set used to build the route history. */
+  routeDataVersion?: number;
   commands: string[];
   completedAt?: number;
   weather: "sunny";
@@ -351,10 +354,12 @@ function appendRouteHistory(t: Trip, activity: Activity) {
   }
   t.routeHistory = history;
   t.routeSegments = segments;
+  t.routeDataVersion = ROUTE_DATA_VERSION;
 }
 function hydrateRouteHistory(t: Trip) {
-  const hasHistory = Array.isArray(t.routeHistory),
-    hasSegments = Array.isArray(t.routeSegments);
+  const rebuild = t.routeDataVersion !== ROUTE_DATA_VERSION,
+    hasHistory = !rebuild && Array.isArray(t.routeHistory),
+    hasSegments = !rebuild && Array.isArray(t.routeSegments);
   if (hasHistory && hasSegments) return;
   const stops = ["hakata"];
   for (const placeId of t.visited) {
@@ -393,6 +398,7 @@ function hydrateRouteHistory(t: Trip) {
         : [];
   t.routeHistory = history;
   t.routeSegments = segments;
+  t.routeDataVersion = ROUTE_DATA_VERSION;
 }
 function visit(t: Trip, at: number) {
   const p = placeById[t.placeId];
@@ -613,6 +619,7 @@ export function createTrip(
     distanceKm: 0,
     routeHistory: [placeById.hakata.point],
     routeSegments: [],
+    routeDataVersion: ROUTE_DATA_VERSION,
     commands: [],
     weather: "sunny",
   };
