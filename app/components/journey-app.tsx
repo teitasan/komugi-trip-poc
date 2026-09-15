@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import JourneyMap from "./journey-map";
 import {
   currentPosition,
-  currentTravelPath,
+  currentTravelSegments,
   tripDay,
   type Trip,
   type Entry,
@@ -352,9 +352,16 @@ export default function JourneyApp() {
   );
   const activity = trip?.activity,
     position = trip ? currentPosition(trip, now) : placeById.hakata.point,
-    traveledRoute = trip ? currentTravelPath(trip, now) : [],
+    traveledSegments = trip ? currentTravelSegments(trip, now) : [],
     route =
-      activity?.kind === "move" ? activity.legs.flatMap((l) => l.points) : [],
+      activity?.kind === "move"
+        ? activity.legs.map(({ points, mode }) => ({ points, mode }))
+        : [],
+    routeModes = [
+      ...new Set(
+        [...traveledSegments, ...route].map((segment) => segment.mode),
+      ),
+    ],
     remaining = activity ? Math.max(0, activity.end - now) : 0;
   const primaryMode = activity?.legs.some((l) => l.mode === "train")
       ? "train"
@@ -649,7 +656,7 @@ export default function JourneyApp() {
               <div className="map-panel">
                 <JourneyMap
                   position={position}
-                  traveledRoute={traveledRoute}
+                  traveledSegments={traveledSegments}
                   route={route}
                   moving={activity?.kind === "move"}
                   bubble={
@@ -660,18 +667,30 @@ export default function JourneyApp() {
                         : undefined
                   }
                 />
-                {(traveledRoute.length > 1 || route.length > 1) && (
+                {(traveledSegments.length > 0 || route.length > 0) && (
                   <div className="map-route-legend" aria-label="経路の凡例">
-                    {traveledRoute.length > 1 && (
+                    {routeModes.includes("walk") && (
                       <span>
-                        <i className="route-key traveled" />
-                        通った道
+                        <i className="route-key walk" />
+                        徒歩
                       </span>
                     )}
-                    {route.length > 1 && (
+                    {routeModes.includes("train") && (
+                      <span>
+                        <i className="route-key train" />
+                        電車
+                      </span>
+                    )}
+                    {routeModes.includes("bicycle") && (
+                      <span>
+                        <i className="route-key bicycle" />
+                        自転車
+                      </span>
+                    )}
+                    {route.length > 0 && (
                       <span>
                         <i className="route-key planned" />
-                        移動中の経路
+                        点線は移動予定
                       </span>
                     )}
                   </div>

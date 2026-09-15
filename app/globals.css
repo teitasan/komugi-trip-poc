@@ -417,12 +417,21 @@ svg {
   display: inline-block;
   width: 20px;
   height: 0;
-  border-top: 3px solid #d87d4c;
   border-radius: 999px;
+}
+.route-key.walk {
+  border-top: 3px solid #d87d4c;
+}
+.route-key.train {
+  border-top: 3px solid #4d86c5;
+}
+.route-key.bicycle {
+  border-top: 3px solid #67a66f;
 }
 .route-key.planned {
   border-top-color: #819eaa;
   border-top-style: dashed;
+  border-top-width: 3px;
 }
 .map-location {
   background: #fff;

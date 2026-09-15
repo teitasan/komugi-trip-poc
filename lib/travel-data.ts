@@ -5,6 +5,10 @@ export type Personality = "foodie" | "frugal" | "rail" | "cyclist";
 // saved trips created before the POC transport scope was narrowed.
 export type Mode = "walk" | "train";
 export type StoredMode = Mode | "bicycle";
+export type RouteSegment = {
+  points: Point[];
+  mode: StoredMode;
+};
 export const personalities: Record<Personality, string> = {
   foodie: "食いしん坊",
   frugal: "節約家",

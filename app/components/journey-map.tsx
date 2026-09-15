@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import type { RouteSegment, StoredMode } from "@/lib/travel-data";
 export type MapPoint = [number, number];
+const routeColors: Record<StoredMode, string> = {
+  walk: "#d87d4c",
+  train: "#4d86c5",
+  bicycle: "#67a66f",
+};
 let leafletLoading: Promise<void> | undefined;
 function loadLeaflet() {
   if ((window as any).L) return Promise.resolve();
@@ -24,14 +30,14 @@ function loadLeaflet() {
 }
 export default function JourneyMap({
   position = [33.5897, 130.4207],
-  traveledRoute = [],
+  traveledSegments = [],
   route = [],
   moving = false,
   bubble,
 }: {
   position?: MapPoint;
-  traveledRoute?: MapPoint[];
-  route?: MapPoint[];
+  traveledSegments?: RouteSegment[];
+  route?: RouteSegment[];
   moving?: boolean;
   bubble?: string;
 }) {
@@ -81,40 +87,41 @@ export default function JourneyMap({
       map = instance.current;
     layers.current.forEach((l) => l.remove());
     layers.current = [];
-    if (traveledRoute.length > 1) {
-      const line = L.polyline(traveledRoute, {
-        color: "#d87d4c",
-        weight: 5,
-        opacity: 0.95,
-        lineCap: "round",
-        lineJoin: "round",
-      }).addTo(map);
-      layers.current.push(line);
-    }
-    if (route.length > 1) {
-      const line = L.polyline(route, {
-        color: "#819eaa",
-        weight: 4,
-        opacity: 0.9,
-        dashArray: "6,10",
-        lineCap: "round",
-        lineJoin: "round",
-      }).addTo(map);
-      layers.current.push(line);
+    const drawSegments = (segments: RouteSegment[], planned = false) => {
+      for (const segment of segments) {
+        if (segment.points.length < 2) continue;
+        const line = L.polyline(segment.points, {
+          color: routeColors[segment.mode],
+          weight: planned ? 4 : 5,
+          opacity: planned ? 0.9 : 0.95,
+          ...(planned ? { dashArray: "6,10" } : {}),
+          lineCap: "round",
+          lineJoin: "round",
+        }).addTo(map);
+        layers.current.push(line);
+      }
+    };
+    drawSegments(traveledSegments);
+    drawSegments(route, true);
+    const destinationSegment = route.at(-1),
+      destination = destinationSegment?.points.at(-1);
+    if (destination && destinationSegment) {
       layers.current.push(
-        L.circleMarker(route[route.length - 1], {
+        L.circleMarker(destination, {
           radius: 7,
           color: "white",
           weight: 3,
-          fillColor: "#819eaa",
+          fillColor: routeColors[destinationSegment.mode],
           fillOpacity: 1,
         }).addTo(map),
       );
     }
-    const key = JSON.stringify([traveledRoute, route]);
+    const traveledPoints = traveledSegments.flatMap((segment) => segment.points),
+      routePoints = route.flatMap((segment) => segment.points),
+      key = JSON.stringify([traveledSegments, route]);
     if (key !== lastRoute.current) {
       lastRoute.current = key;
-      const boundsPoints = [...traveledRoute, ...route, position];
+      const boundsPoints = [...traveledPoints, ...routePoints, position];
       if (boundsPoints.length > 1)
         map.fitBounds(L.latLngBounds(boundsPoints), {
           paddingTopLeft: [70, 95],
@@ -147,7 +154,7 @@ export default function JourneyMap({
   }, [
     ready,
     JSON.stringify(position),
-    JSON.stringify(traveledRoute),
+    JSON.stringify(traveledSegments),
     JSON.stringify(route),
     moving,
     bubble,

@@ -13,6 +13,7 @@ import {
   type Personality,
   type Place,
   type Food,
+  type RouteSegment,
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
@@ -76,6 +77,8 @@ export type Trip = {
   distanceKm: number;
   /** Coordinates already traveled by the character, kept for the map history. */
   routeHistory?: Point[];
+  /** Completed route segments, retaining the transport mode for map colors. */
+  routeSegments?: RouteSegment[];
   commands: string[];
   completedAt?: number;
   weather: "sunny";
@@ -340,13 +343,19 @@ function appendUniquePoints(target: Point[], points: Point[]) {
 }
 function appendRouteHistory(t: Trip, activity: Activity) {
   const history = t.routeHistory ?? [placeById[activity.from].point];
+  const segments = t.routeSegments ?? [];
   for (const leg of activity.legs) {
     appendUniquePoints(history, leg.points);
+    if (leg.points.length > 1)
+      segments.push({ points: leg.points, mode: leg.mode });
   }
   t.routeHistory = history;
+  t.routeSegments = segments;
 }
 function hydrateRouteHistory(t: Trip) {
-  if (t.routeHistory) return;
+  const hasHistory = Array.isArray(t.routeHistory),
+    hasSegments = Array.isArray(t.routeSegments);
+  if (hasHistory && hasSegments) return;
   const stops = ["hakata"];
   for (const placeId of t.visited) {
     if (placeById[placeId] && stops[stops.length - 1] !== placeId)
@@ -360,12 +369,30 @@ function hydrateRouteHistory(t: Trip) {
     stops[stops.length - 1] !== "hakata"
   )
     stops.push("hakata");
-  const history: Point[] = [placeById.hakata.point];
+  const reconstructed: RouteSegment[] = [];
   for (let i = 1; i < stops.length; i++) {
     const legs = getRoute(stops[i - 1], stops[i], t.personality);
-    for (const leg of legs) appendUniquePoints(history, leg.points);
+    for (const leg of legs) {
+      if (leg.points.length > 1)
+        reconstructed.push({ points: leg.points, mode: leg.mode });
+    }
   }
+  const history: Point[] = hasHistory
+    ? [...(t.routeHistory ?? [])]
+    : [placeById.hakata.point];
+  if (!hasHistory) {
+    for (const segment of reconstructed)
+      appendUniquePoints(history, segment.points);
+  }
+  const segments = hasSegments
+    ? [...(t.routeSegments ?? [])]
+    : reconstructed.length
+      ? reconstructed
+      : history.length > 1
+        ? [{ points: history, mode: "walk" as const }]
+        : [];
   t.routeHistory = history;
+  t.routeSegments = segments;
 }
 function visit(t: Trip, at: number) {
   const p = placeById[t.placeId];
@@ -585,6 +612,7 @@ export function createTrip(
     nights: [],
     distanceKm: 0,
     routeHistory: [placeById.hakata.point],
+    routeSegments: [],
     commands: [],
     weather: "sunny",
   };
@@ -658,16 +686,33 @@ export function currentPosition(t: Trip, now: number): Point {
   return placeById[t.activity.to].point;
 }
 export function currentTravelPath(t: Trip, now: number): Point[] {
+  const points: Point[] = [];
+  for (const segment of currentTravelSegments(t, now))
+    appendUniquePoints(points, segment.points);
+  if (points.length) return points;
   const origin = t.activity.kind === "move" ? t.activity.from : t.placeId;
-  const history = [
+  return [
     ...(t.routeHistory ?? [placeById[origin]?.point ?? placeById.hakata.point]),
   ];
-  if (t.activity.kind !== "move") return history;
+}
+export function currentTravelSegments(t: Trip, now: number): RouteSegment[] {
+  const origin = t.activity.kind === "move" ? t.activity.from : t.placeId,
+    fallback =
+      t.routeHistory ?? [placeById[origin]?.point ?? placeById.hakata.point],
+    segments = t.routeSegments?.map((segment) => ({
+      points: [...segment.points],
+      mode: segment.mode,
+    })) ?? [];
+  if (t.activity.kind !== "move") {
+    if (!segments.length && fallback.length > 1)
+      segments.push({ points: fallback, mode: "walk" });
+    return segments;
+  }
   let elapsed = Math.max(0, now - t.activity.start) / 60000;
   for (const leg of t.activity.legs) {
     if (!leg.points.length) continue;
     if (elapsed > leg.minutes) {
-      appendUniquePoints(history, leg.points);
+      segments.push({ points: leg.points, mode: leg.mode });
       elapsed -= leg.minutes;
       continue;
     }
@@ -690,10 +735,10 @@ export function currentTravelPath(t: Trip, now: number): Point[] {
       prefix.push(b);
       walked += segment;
     }
-    appendUniquePoints(history, prefix);
+    segments.push({ points: prefix, mode: leg.mode });
     break;
   }
-  return history;
+  return segments;
 }
 export function fund(t: Trip, amount: number, requestId: string, at: number) {
   if (t.commands.includes(requestId)) return;
