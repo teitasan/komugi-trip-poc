@@ -19,6 +19,7 @@ const {
   getRoute,
   routeCost,
   routeMinutes,
+  walkingMinutes,
   HOUR,
   DAY,
 } = require("../.sites-runtime/simulation.cjs");
@@ -112,6 +113,13 @@ for (const [from, to] of [
   assert(routeMinutes(route) > 0);
   assert(routeCost(route) >= 0);
 }
+const walkingRoute = getRoute("hakata", "hakata-temple", "foodie");
+assert(
+  walkingRoute
+    .filter((leg) => leg.mode === "walk")
+    .every((leg) => leg.minutes === walkingMinutes(leg.km)),
+  "walking durations are not derived from endpoint geometry",
+);
 const lateStart = Date.UTC(2026, 8, 14, 14); // 23:00 JST
 const lateTrip = createTrip("late-food", 3, 10000, "foodie", lateStart, 1);
 advance(lateTrip, lateStart + 5 * 60000);

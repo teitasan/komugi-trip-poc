@@ -17,12 +17,18 @@ import {
 } from "./travel-data";
 export const HOUR = 3600000,
   DAY = 24 * HOUR;
+export const WALK_SPEED_KMH = 4;
+export function walkingMinutes(km: number) {
+  // A one-minute floor keeps coincident place/station points from becoming
+  // zero-duration legs while still deriving every duration from geometry.
+  return Math.max(1, (km / WALK_SPEED_KMH) * 60);
+}
 // Sightseeing winds down in the evening. If no late meal is needed, Komugi
 // should look for a place to sleep instead of repeatedly emitting bench rests.
 const LODGING_HOUR = 21;
-// Increment when curated station coordinates or route geometry changes so
-// saved trips rebuild their historical paths with the current data.
-const ROUTE_DATA_VERSION = 3;
+// Increment when curated coordinates, route geometry, or travel-time rules
+// change so saved trips rebuild their historical paths with current data.
+const ROUTE_DATA_VERSION = 4;
 export type Category =
   | "transport"
   | "food"
@@ -130,7 +136,10 @@ export function getRoute(
         km = pathLength(points),
         mode: Mode = e.mode,
         cost = e.cost ?? (mode === "walk" ? 0 : Math.ceil((170 + km * 22) / 10) * 10),
-        minutes = e.minutes ?? (mode === "walk" ? (km / 4) * 60 : (km / 32) * 60 + 9),
+        minutes =
+          mode === "walk"
+            ? walkingMinutes(km)
+            : (e.minutes ?? (km / 32) * 60 + 9),
         weight =
           minutes +
           (preference === "frugal" ? cost / 12 : 0) -

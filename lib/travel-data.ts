@@ -530,68 +530,71 @@ export const railLineById = Object.fromEntries(
   railLines.map((line) => [line.id, line]),
 ) as Record<string, RailLine>;
 
-export type PlaceStationAccess = { stationId: string; minutes: number };
+// Walking time is derived from the geometry of the two endpoints. Keeping
+// only the station id here prevents access times from drifting away from the
+// coordinates when a place or station is edited.
+export type PlaceStationAccess = { stationId: string };
 export const placeStationAccess: Record<string, PlaceStationAccess[]> = {
-  hakata: [{ stationId: "st_hakata", minutes: 3 }],
+  hakata: [{ stationId: "st_hakata" }],
   "hakata-temple": [
-    { stationId: "st_gion", minutes: 4 },
-    { stationId: "st_hakata", minutes: 10 },
+    { stationId: "st_gion" },
+    { stationId: "st_hakata" },
   ],
   "hakata-mall": [
-    { stationId: "st_kushida", minutes: 5 },
-    { stationId: "st_nakasu", minutes: 8 },
-    { stationId: "st_gion", minutes: 9 },
+    { stationId: "st_kushida" },
+    { stationId: "st_nakasu" },
+    { stationId: "st_gion" },
   ],
   // Legacy access kept only for trips created before the destination was removed.
   canal: [
-    { stationId: "st_nakasu", minutes: 7 },
-    { stationId: "st_gion", minutes: 8 },
+    { stationId: "st_nakasu" },
+    { stationId: "st_gion" },
   ],
   nakasu: [
-    { stationId: "st_nakasu", minutes: 3 },
-    { stationId: "st_gion", minutes: 8 },
+    { stationId: "st_nakasu" },
+    { stationId: "st_gion" },
   ],
   tenjin: [
-    { stationId: "st_tenjin", minutes: 5 },
-    { stationId: "st_tenjin_minami", minutes: 6 },
-    { stationId: "st_nt_tenjin", minutes: 7 },
+    { stationId: "st_tenjin" },
+    { stationId: "st_tenjin_minami" },
+    { stationId: "st_nt_tenjin" },
   ],
   ohori: [
-    { stationId: "st_ohori", minutes: 5 },
-    { stationId: "st_tojinmachi", minutes: 9 },
+    { stationId: "st_ohori" },
+    { stationId: "st_tojinmachi" },
   ],
   maizuru: [
-    { stationId: "st_akasaka", minutes: 8 },
-    { stationId: "st_ohori", minutes: 10 },
+    { stationId: "st_akasaka" },
+    { stationId: "st_ohori" },
   ],
   nishijin: [
-    { stationId: "st_nishijin", minutes: 4 },
-    { stationId: "st_fujisaki", minutes: 10 },
+    { stationId: "st_nishijin" },
+    { stationId: "st_fujisaki" },
   ],
   momochi: [
-    { stationId: "st_nishijin", minutes: 17 },
-    { stationId: "st_tojinmachi", minutes: 18 },
+    { stationId: "st_nishijin" },
+    { stationId: "st_tojinmachi" },
   ],
   tower: [
-    { stationId: "st_nishijin", minutes: 20 },
-    { stationId: "st_fujisaki", minutes: 20 },
+    { stationId: "st_nishijin" },
+    { stationId: "st_fujisaki" },
   ],
   dome: [
-    { stationId: "st_tojinmachi", minutes: 12 },
-    { stationId: "st_nishijin", minutes: 18 },
+    { stationId: "st_tojinmachi" },
+    { stationId: "st_nishijin" },
   ],
-  meinohama: [{ stationId: "st_meinohama", minutes: 5 }],
-  itoshima: [{ stationId: "st_maebaru", minutes: 5 }],
-  futami: [{ stationId: "st_kafuri", minutes: 28 }],
-  dazaifu: [{ stationId: "st_nt_dazaifu", minutes: 4 }],
+  meinohama: [{ stationId: "st_meinohama" }],
+  itoshima: [{ stationId: "st_maebaru" }],
+  futami: [{ stationId: "st_kafuri" }],
+  dazaifu: [{ stationId: "st_nt_dazaifu" }],
   kashii: [
-    { stationId: "st_kashii", minutes: 4 },
-    { stationId: "st_nt_kashii", minutes: 5 },
+    { stationId: "st_kashii" },
+    { stationId: "st_nt_kashii" },
   ],
-  uminaka: [{ stationId: "st_saitozaki", minutes: 15 }],
+  uminaka: [{ stationId: "st_saitozaki" }],
   gannosu: [
-    { stationId: "st_gannosu", minutes: 4 },
-    { stationId: "st_wajiro", minutes: 22 },
+    { stationId: "st_gannosu" },
+    { stationId: "st_wajiro" },
   ],
 };
 
@@ -617,7 +620,6 @@ const accessEdges: Edge[] = Object.entries(placeStationAccess).flatMap(
       b: access.stationId,
       mode: "walk" as const,
       points: [placeById[placeId].point, stationById[access.stationId].point],
-      minutes: access.minutes,
     })),
 );
 const transferEdges: Edge[] = [
@@ -626,21 +628,18 @@ const transferEdges: Edge[] = [
     b: "st_nt_tenjin",
     mode: "walk",
     points: [stationById.st_tenjin.point, stationById.st_nt_tenjin.point],
-    minutes: 5,
   },
   {
     a: "st_kashii",
     b: "st_nt_kashii",
     mode: "walk",
     points: [stationById.st_kashii.point, stationById.st_nt_kashii.point],
-    minutes: 5,
   },
   {
     a: "st_jr_futsukaichi",
     b: "st_nt_futsukaichi",
     mode: "walk",
     points: [stationById.st_jr_futsukaichi.point, stationById.st_nt_futsukaichi.point],
-    minutes: 6,
   },
 ];
 export function railFare(km: number, operator: RailOperator) {
